@@ -1,7 +1,7 @@
 use std::collections::HashSet;
 
-pub mod untyped;
 pub mod simply_typed;
+pub mod untyped;
 
 fn fresh_var(vs: &HashSet<String>) -> String {
     for i in 0u64.. {

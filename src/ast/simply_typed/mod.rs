@@ -272,8 +272,26 @@ impl fmt::Display for Term {
         match self {
             Self::Variable(x) => x.fmt(f),
             Self::Abstraction(x, ty, t) => write!(f, "λ{}: {}. {}", x, ty, t),
-            Self::Application(t, u) => write!(f, "({}) ({})", t, u),
+            Self::Application(t, u) => {
+                write_func(t, f)?;
+                write!(f, " ")?;
+                write_term(u, f)
+            }
         }
+    }
+}
+
+fn write_term(t: &Term, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+    match t {
+        Term::Variable(_) => fmt::Display::fmt(t, f),
+        _ => write!(f, "({})", t),
+    }
+}
+
+fn write_func(t: &Term, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+    match t {
+        Term::Variable(_) | Term::Application(_, _) => fmt::Display::fmt(t, f),
+        _ => write!(f, "({})", t),
     }
 }
 
@@ -281,8 +299,18 @@ impl fmt::Display for Type {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             Self::Base => write!(f, "ι"),
-            Self::Fn(t, u) => write!(f, "({}) -> {}", t, u),
+            Self::Fn(t, u) => {
+                write_ty(t, f)?;
+                write!(f, " -> {}", u)
+            }
         }
+    }
+}
+
+fn write_ty(ty: &Type, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+    match ty {
+        Type::Base => fmt::Display::fmt(ty, f),
+        Type::Fn(_, _) => write!(f, "({})", ty),
     }
 }
 

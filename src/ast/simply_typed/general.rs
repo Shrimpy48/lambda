@@ -318,7 +318,11 @@ where
             Self::Constant(c) => c.fmt(f),
             Self::Variable(x) => x.fmt(f),
             Self::Abstraction(x, ty, t) => write!(f, "λ{}: {}. {}", x, ty, t),
-            Self::Application(t, u) => write!(f, "({}) ({})", t, u),
+            Self::Application(t, u) => {
+                write_func(t, f)?;
+                write!(f, " ")?;
+                write_term(u, f)
+            }
         }
     }
 }
@@ -327,8 +331,40 @@ impl<B: fmt::Display> fmt::Display for Type<B> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             Self::Base(b) => b.fmt(f),
-            Self::Fn(t, u) => write!(f, "({}) -> {}", t, u),
+            Self::Fn(t, u) => {
+                write_ty(t, f)?;
+                write!(f, " -> {}", u)
+            }
         }
+    }
+}
+
+fn write_term<B>(t: &Term<B>, f: &mut fmt::Formatter<'_>) -> fmt::Result
+where
+    B: fmt::Display + TypeConstant,
+    B::Constant: fmt::Display,
+{
+    match t {
+        Term::Variable(_) | Term::Constant(_) => fmt::Display::fmt(t, f),
+        _ => write!(f, "({})", t),
+    }
+}
+
+fn write_func<B>(t: &Term<B>, f: &mut fmt::Formatter<'_>) -> fmt::Result
+where
+    B: fmt::Display + TypeConstant,
+    B::Constant: fmt::Display,
+{
+    match t {
+        Term::Variable(_) | Term::Constant(_) | Term::Application(_, _) => fmt::Display::fmt(t, f),
+        _ => write!(f, "({})", t),
+    }
+}
+
+fn write_ty<B: fmt::Display>(ty: &Type<B>, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+    match ty {
+        Type::Base(_) => fmt::Display::fmt(ty, f),
+        Type::Fn(_, _) => write!(f, "({})", ty),
     }
 }
 

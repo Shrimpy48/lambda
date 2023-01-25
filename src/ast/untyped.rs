@@ -217,7 +217,25 @@ impl fmt::Display for Term {
         match self {
             Self::Variable(x) => x.fmt(f),
             Self::Abstraction(x, t) => write!(f, "λ{}. {}", x, t),
-            Self::Application(t, u) => write!(f, "({}) ({})", t, u),
+            Self::Application(t, u) => {
+                write_func(t, f)?;
+                write!(f, " ")?;
+                write_term(u, f)
+            }
         }
+    }
+}
+
+fn write_term(t: &Term, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+    match t {
+        Term::Variable(_) => fmt::Display::fmt(t, f),
+        _ => write!(f, "({})", t),
+    }
+}
+
+fn write_func(t: &Term, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+    match t {
+        Term::Variable(_) | Term::Application(_, _) => fmt::Display::fmt(t, f),
+        _ => write!(f, "({})", t),
     }
 }
