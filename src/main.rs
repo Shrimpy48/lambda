@@ -37,18 +37,21 @@ fn main() {
     println!("{}", s);
     // let s = de_bruijn::Term::try_from(s).unwrap();
     // println!("{}", s);
-    let term_1 = Term::Application(
-        Box::new(Term::Application(Box::new(s.clone()), Box::new(k.clone()))),
-        Box::new(k.clone()),
+    let mut term_1 = Term::Application(
+        Box::new(Term::Application(Box::new(s), Box::new(k.clone()))),
+        Box::new(k),
     );
-    println!("{}", term_1);
-    let term_2: de_bruijn::Term = term_1.clone().try_into().unwrap();
-    println!("{}", term_2);
-    let term_1_red = term_1.beta_reduce_lazy().unwrap();
-    println!("{}", term_1_red);
-    let term_2_red = term_2.beta_reduce_lazy().unwrap();
-    println!("{}", term_2_red);
-    let term_3: de_bruijn::Term = term_1_red.try_into().unwrap();
-    println!("{}", term_3);
-    assert_eq!(term_2_red, term_3);
+    let mut term_2: de_bruijn::Term = term_1.clone().try_into().unwrap();
+    loop {
+        match (term_1.beta_reduce_lazy(), term_2.beta_reduce_lazy()) {
+            (None, None) => break,
+            (None, Some(_)) | (Some(_), None) => panic!("different number of beta-reductions"),
+            (Some(t1), Some(t2)) => {
+                println!("{}\n{}", t1, t2);
+                let t1_conv: de_bruijn::Term = t1.clone().try_into().unwrap();
+                assert_eq!(t1_conv, t2);
+                (term_1, term_2) = (t1, t2);
+            }
+        }
+    }
 }

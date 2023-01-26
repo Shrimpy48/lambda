@@ -35,6 +35,8 @@ impl Term {
 
     /// Substitute following the formal definition, where [to] is an unbounded list
     /// of terms to substitute - the ith term for the ith free variable.
+    /// Since Rust is strict, the unbounded list is represented by a function from
+    /// indices to values.
     pub fn substitute(&self, to: &dyn Fn(u64) -> Term) -> Self {
         match self {
             Self::Variable(v) => to(*v),
@@ -229,14 +231,21 @@ mod tests {
                 Box::new(untyped::Term::Variable("x".into())),
             )),
         );
-        let term_1 = untyped::Term::Application(
+        let mut term_1 = untyped::Term::Application(
             Box::new(untyped::Term::Application(Box::new(s), Box::new(k.clone()))),
             Box::new(k),
         );
-        let term_2: Term = term_1.clone().try_into().unwrap();
-        let term_1_red = term_1.beta_reduce_lazy().unwrap();
-        let term_2_red = term_2.beta_reduce_lazy().unwrap();
-        let term_3: Term = term_1_red.try_into().unwrap();
-        assert_eq!(term_2_red, term_3);
+        let mut term_2: Term = term_1.clone().try_into().unwrap();
+        loop {
+            match (term_1.beta_reduce_lazy(), term_2.beta_reduce_lazy()) {
+                (None, None) => break,
+                (None, Some(_)) | (Some(_), None) => panic!("different number of beta-reductions"),
+                (Some(t1), Some(t2)) => {
+                    let t1_conv: Term = t1.clone().try_into().unwrap();
+                    assert_eq!(t1_conv, t2);
+                    (term_1, term_2) = (t1, t2);
+                }
+            }
+        }
     }
 }

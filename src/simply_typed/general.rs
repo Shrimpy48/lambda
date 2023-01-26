@@ -155,7 +155,7 @@ impl<B: TypeConstant> Term<B> {
                 vars.extend(to.vars());
                 vars.insert(from.to_owned());
                 let w = fresh_var(&vars);
-                let new_body = Box::new(t.substitute(from, &to.rename(v, &w)));
+                let new_body = Box::new(t.rename(v, &w).substitute(from, to));
                 Self::Abstraction(w, ty.clone(), new_body)
             }
             Self::Application(t, u) => Self::Application(
