@@ -1,7 +1,9 @@
-use std::collections::HashSet;
+use std::collections::{HashMap, HashSet};
 use std::fmt;
 
 use super::fresh_var;
+
+pub mod de_bruijn;
 
 #[derive(Debug, Clone, Eq)]
 pub enum Term {
@@ -237,5 +239,33 @@ fn write_func(t: &Term, f: &mut fmt::Formatter<'_>) -> fmt::Result {
     match t {
         Term::Variable(_) | Term::Application(_, _) => fmt::Display::fmt(t, f),
         _ => write!(f, "({})", t),
+    }
+}
+
+/// Convert a term to De Bruijn indexing.
+fn to_de_bruijn(term: &Term, binds: &HashMap<String, u64>) -> Option<de_bruijn::Term> {
+    match term {
+        Term::Variable(x) => binds.get(x).map(|i| de_bruijn::Term::Variable(*i)),
+        Term::Abstraction(x, t) => {
+            let mut new_binds: HashMap<_, _> =
+                binds.iter().map(|(v, i)| (v.clone(), i + 1)).collect();
+            new_binds.insert(x.to_owned(), 0);
+            Some(de_bruijn::Term::Abstraction(Box::new(to_de_bruijn(
+                t, &new_binds,
+            )?)))
+        }
+        Term::Application(t, u) => Some(de_bruijn::Term::Application(
+            Box::new(to_de_bruijn(t, binds)?),
+            Box::new(to_de_bruijn(u, binds)?),
+        )),
+    }
+}
+
+/// Convert a closed term to De Bruijn indexing.
+impl TryFrom<Term> for de_bruijn::Term {
+    type Error = ();
+
+    fn try_from(value: Term) -> Result<Self, Self::Error> {
+        to_de_bruijn(&value, &HashMap::new()).ok_or(())
     }
 }
