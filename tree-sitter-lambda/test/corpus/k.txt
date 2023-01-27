@@ -1,0 +1,14 @@
+============
+K combinator
+============
+
+λx. λy. x
+
+---
+
+(source
+  (abstraction
+    (identifier)
+    (abstraction
+      (identifier)
+      (identifier))))

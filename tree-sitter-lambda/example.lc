@@ -1,0 +1,14 @@
+(λn. 
+  n 
+    (λf. f (λz. λs. s z) (λz. λs. s z)) 
+    (λp. 
+      p 
+        (λa. λb. 
+          λf. f 
+            (λu. λw. a (w u) w) 
+            (λx. λf. a x (λx. b x f))
+        )
+    ) 
+    (λx. λy. y)
+) 
+(λz. λs. s (s (s z)))

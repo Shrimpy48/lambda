@@ -1,0 +1,22 @@
+============
+S combinator
+============
+
+\x. \y. \z. x z (y z)
+
+---
+
+(source
+  (abstraction
+    (identifier)
+    (abstraction
+      (identifier)
+      (abstraction
+        (identifier)
+        (application 
+          (application 
+            (identifier) 
+            (identifier)) 
+          (application 
+            (identifier) 
+            (identifier)))))))
