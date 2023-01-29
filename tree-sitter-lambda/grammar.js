@@ -21,9 +21,24 @@ module.exports = grammar({
     abstraction: $ => seq(
         choice("\\", "λ"),
         field('bound', $.identifier),
+        optional(seq(":", field('bind_type', $._type))),
         ".",
         field('body', $._term)
     ),
+
+    _type: $ => choice(
+        $.base_type,
+        $.function_type,
+        seq('(', $._type, ')')
+    ),
+
+    base_type: $ => choice("i", "ι"),
+
+    function_type: $ => prec.right(1, seq(
+        $._type, 
+        choice("->", "→", "⟶"), 
+        $._type
+    )),
 
     block_comment: $ => seq(
         '/*',

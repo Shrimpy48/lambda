@@ -1,0 +1,15 @@
+============
+I combinator
+============
+
+\x: i -> i. x
+
+---
+
+(source
+  (abstraction
+    (identifier)
+    (function_type
+      (base_type)
+      (base_type))
+    (identifier)))

@@ -3,6 +3,28 @@
     "type": "abstraction",
     "named": true,
     "fields": {
+      "bind_type": {
+        "multiple": true,
+        "required": false,
+        "types": [
+          {
+            "type": "(",
+            "named": false
+          },
+          {
+            "type": ")",
+            "named": false
+          },
+          {
+            "type": "base_type",
+            "named": true
+          },
+          {
+            "type": "function_type",
+            "named": true
+          }
+        ]
+      },
       "body": {
         "multiple": true,
         "required": true,
@@ -100,9 +122,33 @@
     }
   },
   {
+    "type": "base_type",
+    "named": true,
+    "fields": {}
+  },
+  {
     "type": "block_comment",
     "named": true,
     "fields": {}
+  },
+  {
+    "type": "function_type",
+    "named": true,
+    "fields": {},
+    "children": {
+      "multiple": true,
+      "required": true,
+      "types": [
+        {
+          "type": "base_type",
+          "named": true
+        },
+        {
+          "type": "function_type",
+          "named": true
+        }
+      ]
+    }
   },
   {
     "type": "line_comment",
@@ -145,6 +191,10 @@
     "named": false
   },
   {
+    "type": "->",
+    "named": false
+  },
+  {
     "type": ".",
     "named": false
   },
@@ -157,7 +207,15 @@
     "named": false
   },
   {
+    "type": ":",
+    "named": false
+  },
+  {
     "type": "\\",
+    "named": false
+  },
+  {
+    "type": "i",
     "named": false
   },
   {
@@ -165,7 +223,19 @@
     "named": true
   },
   {
+    "type": "ι",
+    "named": false
+  },
+  {
     "type": "λ",
+    "named": false
+  },
+  {
+    "type": "→",
+    "named": false
+  },
+  {
+    "type": "⟶",
     "named": false
   }
 ]

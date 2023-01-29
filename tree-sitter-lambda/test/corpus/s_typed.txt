@@ -1,0 +1,37 @@
+============
+S combinator
+============
+
+\x: (i -> i) -> i -> i. \y: (i -> i) -> i. \z: i -> i. x z (y z)
+
+---
+
+(source
+  (abstraction
+    (identifier)
+    (function_type
+      (function_type
+        (base_type)
+        (base_type))
+      (function_type
+        (base_type)
+        (base_type)))
+    (abstraction
+      (identifier)
+      (function_type
+        (function_type
+          (base_type)
+          (base_type))
+        (base_type))
+      (abstraction
+        (identifier)
+        (function_type
+          (base_type)
+          (base_type))        
+        (application 
+          (application 
+            (identifier) 
+            (identifier)) 
+          (application 
+            (identifier) 
+            (identifier)))))))

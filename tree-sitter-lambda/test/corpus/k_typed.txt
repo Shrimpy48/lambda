@@ -1,0 +1,18 @@
+============
+K combinator
+============
+
+λx: ι → ι. λy: ι. x
+
+---
+
+(source
+  (abstraction
+    (identifier)
+    (function_type
+      (base_type)
+      (base_type))
+    (abstraction
+      (identifier)
+      (base_type)
+      (identifier))))

@@ -10,11 +10,19 @@
 [
   "\\"
   "λ"
+  "->"
+  "→"
+  "⟶"
 ] @operator
 
-"." @punctuation.delimiter
+[
+  "." 
+  ":"
+] @punctuation.delimiter
 
 [
   "("
   ")"
 ] @punctuation.bracket
+
+(base_type) @type
