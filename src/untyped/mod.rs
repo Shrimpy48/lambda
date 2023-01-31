@@ -1,9 +1,15 @@
 use std::collections::{HashMap, HashSet};
 use std::fmt;
 
+#[cfg(test)]
+use proptest::prelude::*;
+#[cfg(test)]
+use proptest_derive::Arbitrary;
+
 use super::fresh_var;
 
 pub mod de_bruijn;
+pub mod parser;
 
 #[derive(Debug, Clone, Eq)]
 pub enum Term {
@@ -206,6 +212,29 @@ impl Term {
         }
         res
     }
+}
+
+#[cfg(test)]
+impl Arbitrary for Term {
+    type Parameters = ();
+    type Strategy = BoxedStrategy<Self>;
+
+    fn arbitrary_with(_args: Self::Parameters) -> Self::Strategy {
+        arb_term().boxed()
+    }
+}
+
+#[cfg(test)]
+fn arb_term() -> impl Strategy<Value = Term> {
+    let leaf = "[a-z_][a-z0-9_]*".prop_map(Term::Variable);
+    leaf.prop_recursive(8, 256, 10, |inner| {
+        prop_oneof![
+            (inner.clone(), inner.clone())
+                .prop_map(|(f, x)| Term::Application(Box::new(f), Box::new(x))),
+            ("[a-z_][a-z0-9_]*", inner.clone())
+                .prop_map(|(x, b)| Term::Abstraction(x, Box::new(b))),
+        ]
+    })
 }
 
 impl PartialEq for Term {

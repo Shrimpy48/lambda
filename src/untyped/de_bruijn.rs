@@ -172,7 +172,8 @@ impl Term {
 impl fmt::Display for Term {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            Self::Variable(x) => x.fmt(f),
+            Self::Variable(x) => (x + 1).fmt(f),
+            // Self::Variable(x) => x.fmt(f),
             Self::Abstraction(t) => write!(f, "λ {}", t),
             Self::Application(t, u) => {
                 write_func(t, f)?;
