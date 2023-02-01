@@ -1,0 +1,8 @@
+# Seeds for failure cases proptest has generated in the past. It is
+# automatically read and these particular cases re-run before any
+# novel cases are generated.
+#
+# It is recommended to check this file in to source control so that
+# everyone who runs the test benefits from these saved cases.
+cc 4b055dd4d6177a39a2d2892789ba53cc872c8de1f457e703a7448b41b49dec92 # shrinks to f = Application(Abstraction(Application(Variable(0), Variable(0))), Application(Application(Abstraction(Variable(0)), Application(Abstraction(Variable(0)), Abstraction(Variable(0)))), Abstraction(Abstraction(Variable(0)))))
+cc 2e867e514bf1b44202c9e9e140d2f6bb0102deae9cf78ecc59d250f9cc2956cb # shrinks to f = Abstraction(Abstraction(Application(Abstraction(Variable(1)), Variable(0))))

@@ -3,8 +3,6 @@ use std::fmt;
 
 #[cfg(test)]
 use proptest::prelude::*;
-#[cfg(test)]
-use proptest_derive::Arbitrary;
 
 use super::fresh_var;
 
@@ -227,7 +225,7 @@ impl Arbitrary for Term {
 #[cfg(test)]
 fn arb_term() -> impl Strategy<Value = Term> {
     let leaf = "[a-z_][a-z0-9_]*".prop_map(Term::Variable);
-    leaf.prop_recursive(8, 256, 10, |inner| {
+    leaf.prop_recursive(16, 256, 2, |inner| {
         prop_oneof![
             (inner.clone(), inner.clone())
                 .prop_map(|(f, x)| Term::Application(Box::new(f), Box::new(x))),

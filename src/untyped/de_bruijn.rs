@@ -1,5 +1,8 @@
-use std::collections::HashSet;
+use std::collections::{HashSet, VecDeque};
 use std::fmt;
+
+#[cfg(test)]
+use proptest::prelude::*;
 
 /// A lambda calculus term using De Bruijn indexing.
 /// Unlike the usual convention, this is zero-indexed
@@ -169,6 +172,61 @@ impl Term {
     }
 }
 
+#[cfg(test)]
+struct TermGen {
+    func: Box<dyn Fn(u64) -> Term>,
+}
+
+#[cfg(test)]
+impl TermGen {
+    fn new<F: Fn(u64) -> Term + 'static>(func: F) -> Self {
+        Self {
+            func: Box::new(func),
+        }
+    }
+}
+
+#[cfg(test)]
+impl fmt::Debug for TermGen {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "<func>")
+    }
+}
+
+/// Higher-order shenanigans to achieve a stateful recursive Strategy.
+#[cfg(test)]
+fn arb_term_with() -> impl Strategy<Value = TermGen> {
+    let leaf = any::<prop::sample::Index>().prop_map(|i| {
+        TermGen::new(move |n| {
+            if n == 0 {
+                Term::Abstraction(Box::new(Term::Variable(0)))
+            } else {
+                Term::Variable(i.index(n as usize) as u64)
+            }
+        })
+    });
+    leaf.prop_recursive(16, 256, 2, |inner| {
+        prop_oneof![
+            (inner.clone(), inner.clone()).prop_map(|(f1, f2)| TermGen::new(move |n| {
+                Term::Application(Box::new((f1.func)(n)), Box::new((f2.func)(n)))
+            })),
+            inner
+                .clone()
+                .prop_map(|f| TermGen::new(move |n| Term::Abstraction(Box::new((f.func)(n + 1))))),
+        ]
+    })
+}
+
+#[cfg(test)]
+impl Arbitrary for Term {
+    type Parameters = ();
+    type Strategy = BoxedStrategy<Self>;
+
+    fn arbitrary_with(_args: Self::Parameters) -> Self::Strategy {
+        arb_term_with().prop_map(|f| (f.func)(0)).boxed()
+    }
+}
+
 impl fmt::Display for Term {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
@@ -198,6 +256,28 @@ fn write_func(t: &Term, f: &mut fmt::Formatter<'_>) -> fmt::Result {
     }
 }
 
+impl From<Term> for super::Term {
+    fn from(val: Term) -> Self {
+        // TODO: handle non-closed terms
+        give_names(val, &VecDeque::new())
+    }
+}
+
+fn give_names(val: Term, to: &VecDeque<String>) -> super::Term {
+    match val {
+        Term::Variable(v) => super::Term::Variable(to[v as usize].clone()),
+        Term::Abstraction(t) => {
+            let new_var = super::fresh_var(&to.iter().cloned().collect());
+            let mut inner = to.clone();
+            inner.push_front(new_var.clone());
+            super::Term::Abstraction(new_var, Box::new(give_names(*t, &inner)))
+        }
+        Term::Application(t, u) => {
+            super::Term::Application(Box::new(give_names(*t, to)), Box::new(give_names(*u, to)))
+        }
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -205,7 +285,7 @@ mod tests {
     use crate::untyped;
 
     #[test]
-    fn beta_reduction() {
+    fn skk_beta_reduction() {
         let s = untyped::Term::Abstraction(
             "x".into(),
             Box::new(untyped::Term::Abstraction(
@@ -245,6 +325,30 @@ mod tests {
                     let t1_conv: Term = t1.clone().try_into().unwrap();
                     assert_eq!(t1_conv, t2);
                     (term_1, term_2) = (t1, t2);
+                }
+            }
+        }
+    }
+
+    use proptest::prelude::*;
+
+    proptest! {
+        #[test]
+        fn conversion_matches(f in any::<Term>()) {
+            let f2 = untyped::Term::from(f.clone());
+            let f3 = Term::try_from(f2).unwrap();
+            assert_eq!(f, f3);
+        }
+
+        #[test]
+        fn beta_reduce_matches(f in any::<Term>()) {
+            let f2 = untyped::Term::from(f.clone());
+            match (f2.beta_reduce_lazy(), f.beta_reduce_lazy()) {
+                (None, None) => {},
+                (None, Some(_)) | (Some(_), None) => panic!("different number of beta-reductions"),
+                (Some(t1), Some(t2)) => {
+                    let t1_conv: Term = t1.clone().try_into().unwrap();
+                    assert_eq!(t1_conv, t2);
                 }
             }
         }
