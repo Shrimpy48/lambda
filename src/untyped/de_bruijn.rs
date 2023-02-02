@@ -64,13 +64,22 @@ impl Term {
         match self {
             Self::Application(t, u) => {
                 if let Self::Abstraction(b) = t.as_ref() {
-                    Some(b.substitute(&|i| {
-                        if i == 0 {
-                            u.as_ref().clone()
-                        } else {
-                            Term::Variable(i)
-                        }
-                    }))
+                    fn shift1(i: u64) -> Term {
+                        Term::Variable(i + 1)
+                    }
+                    fn shiftm1(i: u64) -> Term {
+                        Term::Variable(i - 1)
+                    }
+                    Some(
+                        b.substitute(&|i| {
+                            if i == 0 {
+                                u.substitute(&shift1)
+                            } else {
+                                Term::Variable(i)
+                            }
+                        })
+                        .substitute(&shiftm1),
+                    )
                 } else if let Some(t2) = t.beta_reduce_lazy() {
                     Some(Self::Application(
                         Box::new(t2),
@@ -92,84 +101,84 @@ impl Term {
         }
     }
 
-    /// Beta-reduce all redexes simultaneously if any exist.
-    pub fn parallel_reduct(&self) -> Option<Self> {
-        match self {
-            Self::Application(t, u) => {
-                if let Self::Abstraction(b) = t.as_ref() {
-                    let b2 = b.parallel_reduct().unwrap_or_else(|| b.as_ref().clone());
-                    let u2 = u.parallel_reduct().unwrap_or_else(|| u.as_ref().clone());
-                    Some(b2.substitute(&|i| {
-                        if i == 0 {
-                            u2.clone()
-                        } else {
-                            Term::Variable(i)
-                        }
-                    }))
-                } else {
-                    match (t.parallel_reduct(), u.parallel_reduct()) {
-                        (None, None) => None,
-                        (t2, u2) => {
-                            let t2 = t2.unwrap_or_else(|| t.as_ref().clone());
-                            let u2 = u2.unwrap_or_else(|| u.as_ref().clone());
+    // /// Beta-reduce all redexes simultaneously if any exist.
+    // pub fn parallel_reduct(&self) -> Option<Self> {
+    //     match self {
+    //         Self::Application(t, u) => {
+    //             if let Self::Abstraction(b) = t.as_ref() {
+    //                 let b2 = b.parallel_reduct().unwrap_or_else(|| b.as_ref().clone());
+    //                 let u2 = u.parallel_reduct().unwrap_or_else(|| u.as_ref().clone());
+    //                 Some(b2.substitute(&|i| {
+    //                     if i == 0 {
+    //                         u2.clone()
+    //                     } else {
+    //                         Term::Variable(i)
+    //                     }
+    //                 }))
+    //             } else {
+    //                 match (t.parallel_reduct(), u.parallel_reduct()) {
+    //                     (None, None) => None,
+    //                     (t2, u2) => {
+    //                         let t2 = t2.unwrap_or_else(|| t.as_ref().clone());
+    //                         let u2 = u2.unwrap_or_else(|| u.as_ref().clone());
 
-                            Some(Self::Application(Box::new(t2), Box::new(u2)))
-                        }
-                    }
-                }
-            }
-            Self::Abstraction(t) => t
-                .parallel_reduct()
-                .map(|t2| Self::Abstraction(Box::new(t2))),
-            _ => None,
-        }
-    }
+    //                         Some(Self::Application(Box::new(t2), Box::new(u2)))
+    //                     }
+    //                 }
+    //             }
+    //         }
+    //         Self::Abstraction(t) => t
+    //             .parallel_reduct()
+    //             .map(|t2| Self::Abstraction(Box::new(t2))),
+    //         _ => None,
+    //     }
+    // }
 
-    /// Eta-reduce the left-outermost simplification if one exists.
-    pub fn eta_reduce_lazy(&self) -> Option<Self> {
-        match self {
-            Self::Abstraction(t) => {
-                if let Self::Application(f, u) = t.as_ref() {
-                    if let Self::Variable(y) = u.as_ref() {
-                        if *y == 1 && !f.free_vars().contains(&1) {
-                            return Some(f.substitute(&|i| Term::Variable(i - 1)));
-                        }
-                    }
-                }
-                t.eta_reduce_lazy()
-                    .map(|u2| Self::Abstraction(Box::new(u2)))
-            }
-            Self::Application(t, u) => {
-                if let Some(t2) = t.eta_reduce_lazy() {
-                    Some(Self::Application(
-                        Box::new(t2),
-                        Box::new(u.as_ref().clone()),
-                    ))
-                } else if let Some(u2) = u.eta_reduce_lazy() {
-                    Some(Self::Application(
-                        Box::new(t.as_ref().clone()),
-                        Box::new(u2),
-                    ))
-                } else {
-                    None
-                }
-            }
-            _ => None,
-        }
-    }
+    // /// Eta-reduce the left-outermost simplification if one exists.
+    // pub fn eta_reduce_lazy(&self) -> Option<Self> {
+    //     match self {
+    //         Self::Abstraction(t) => {
+    //             if let Self::Application(f, u) = t.as_ref() {
+    //                 if let Self::Variable(y) = u.as_ref() {
+    //                     if *y == 1 && !f.free_vars().contains(&1) {
+    //                         return Some(f.substitute(&|i| Term::Variable(i - 1)));
+    //                     }
+    //                 }
+    //             }
+    //             t.eta_reduce_lazy()
+    //                 .map(|u2| Self::Abstraction(Box::new(u2)))
+    //         }
+    //         Self::Application(t, u) => {
+    //             if let Some(t2) = t.eta_reduce_lazy() {
+    //                 Some(Self::Application(
+    //                     Box::new(t2),
+    //                     Box::new(u.as_ref().clone()),
+    //                 ))
+    //             } else if let Some(u2) = u.eta_reduce_lazy() {
+    //                 Some(Self::Application(
+    //                     Box::new(t.as_ref().clone()),
+    //                     Box::new(u2),
+    //                 ))
+    //             } else {
+    //                 None
+    //             }
+    //         }
+    //         _ => None,
+    //     }
+    // }
 
-    /// Fully beta- and eta-reduce the term. Since the lambda calculus is Turing-complete,
-    /// this may not halt.
-    pub fn evaluate(&self) -> Self {
-        let mut res = self.clone();
-        while let Some(new_res) = res.beta_reduce_lazy() {
-            res = new_res;
-        }
-        while let Some(new_res) = res.eta_reduce_lazy() {
-            res = new_res;
-        }
-        res
-    }
+    // /// Fully beta- and eta-reduce the term. Since the lambda calculus is Turing-complete,
+    // /// this may not halt.
+    // pub fn evaluate(&self) -> Self {
+    //     let mut res = self.clone();
+    //     while let Some(new_res) = res.beta_reduce_lazy() {
+    //         res = new_res;
+    //     }
+    //     while let Some(new_res) = res.eta_reduce_lazy() {
+    //         res = new_res;
+    //     }
+    //     res
+    // }
 }
 
 #[cfg(test)]
