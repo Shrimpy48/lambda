@@ -239,6 +239,7 @@ impl Term {
                 let mut inner_env = type_env.clone();
                 inner_env.push((x.to_owned(), ty.clone()));
                 t.type_in(&inner_env)
+                    .map(|t| Type::Fn(Box::new(ty.clone()), Box::new(t)))
             }
             Self::Application(t, u) => {
                 if let Some(Type::Fn(a1, b)) = t.type_in(type_env) {
@@ -327,5 +328,75 @@ impl Into<untyped::Term> for Term {
 impl Into<Box<untyped::Term>> for Box<Term> {
     fn into(self) -> Box<untyped::Term> {
         Box::new((*self).into())
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn i_type() {
+        let i = Term::Abstraction("x".into(), Type::Base, Box::new(Term::Variable("x".into())));
+        let expected = Type::Fn(Box::new(Type::Base), Box::new(Type::Base));
+        assert_eq!(i.type_closed(), Some(expected));
+    }
+
+    #[test]
+    fn k_type() {
+        let k = Term::Abstraction(
+            "x".into(),
+            Type::Base,
+            Box::new(Term::Abstraction(
+                "y".into(),
+                Type::Base,
+                Box::new(Term::Variable("x".into())),
+            )),
+        );
+        let expected = Type::Fn(
+            Box::new(Type::Base),
+            Box::new(Type::Fn(Box::new(Type::Base), Box::new(Type::Base))),
+        );
+        assert_eq!(k.type_closed(), Some(expected));
+    }
+
+    #[test]
+    fn s_type() {
+        let s = Term::Abstraction(
+            "x".into(),
+            Type::Fn(
+                Box::new(Type::Base),
+                Box::new(Type::Fn(Box::new(Type::Base), Box::new(Type::Base))),
+            ),
+            Box::new(Term::Abstraction(
+                "y".into(),
+                Type::Fn(Box::new(Type::Base), Box::new(Type::Base)),
+                Box::new(Term::Abstraction(
+                    "z".into(),
+                    Type::Base,
+                    Box::new(Term::Application(
+                        Box::new(Term::Application(
+                            Box::new(Term::Variable("x".into())),
+                            Box::new(Term::Variable("z".into())),
+                        )),
+                        Box::new(Term::Application(
+                            Box::new(Term::Variable("y".into())),
+                            Box::new(Term::Variable("z".into())),
+                        )),
+                    )),
+                )),
+            )),
+        );
+        let expected = Type::Fn(
+            Box::new(Type::Fn(
+                Box::new(Type::Base),
+                Box::new(Type::Fn(Box::new(Type::Base), Box::new(Type::Base))),
+            )),
+            Box::new(Type::Fn(
+                Box::new(Type::Fn(Box::new(Type::Base), Box::new(Type::Base))),
+                Box::new(Type::Fn(Box::new(Type::Base), Box::new(Type::Base))),
+            )),
+        );
+        assert_eq!(s.type_closed(), Some(expected));
     }
 }
