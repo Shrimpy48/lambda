@@ -1,6 +1,7 @@
 use std::collections::HashSet;
 
 pub mod simply_typed;
+pub mod system_f;
 pub mod untyped;
 
 fn fresh_var(vs: &HashSet<String>) -> String {
