@@ -96,6 +96,7 @@ impl Type {
 
     pub fn alpha_equivalent(&self, other: &Self) -> bool {
         match (self, other) {
+            (Self::Base, Self::Base) => true,
             (Self::Variable(x), Self::Variable(y)) => x == y,
             (Self::ForAll(x, t), Self::ForAll(y, u)) => {
                 let w = fresh_var(&(&self.vars() | &other.vars()));
@@ -625,6 +626,29 @@ fn write_ty(ty: &Type, f: &mut fmt::Formatter<'_>) -> fmt::Result {
     }
 }
 
+impl fmt::Display for TypeEnvironment {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let mut any_elems = false;
+        for v in &self.type_variables {
+            if any_elems {
+                write!(f, ", {v} type")?;
+            } else {
+                write!(f, "{v} type")?;
+                any_elems = true;
+            }
+        }
+        for (v, t) in &self.term_variables {
+            if any_elems {
+                write!(f, ", {v}: {t}")?;
+            } else {
+                write!(f, "{v}: {t}")?;
+                any_elems = true;
+            }
+        }
+        Ok(())
+    }
+}
+
 impl Into<untyped::Term> for Term {
     fn into(self) -> untyped::Term {
         match self {
@@ -640,5 +664,136 @@ impl Into<untyped::Term> for Term {
 impl Into<Box<untyped::Term>> for Box<Term> {
     fn into(self) -> Box<untyped::Term> {
         Box::new((*self).into())
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn i_type() {
+        let i = Term::TypeAbstraction(
+            "a".into(),
+            Box::new(Term::Abstraction(
+                "x".into(),
+                Type::Variable("a".into()),
+                Box::new(Term::Variable("x".into())),
+            )),
+        );
+        let expected = Type::ForAll(
+            "a".into(),
+            Box::new(Type::Fn(
+                Box::new(Type::Variable("a".into())),
+                Box::new(Type::Variable("a".into())),
+            )),
+        );
+        assert_eq!(i.type_closed(), Some(expected));
+    }
+
+    #[test]
+    fn k_type() {
+        let k = Term::TypeAbstraction(
+            "a".into(),
+            Box::new(Term::TypeAbstraction(
+                "b".into(),
+                Box::new(Term::Abstraction(
+                    "x".into(),
+                    Type::Variable("a".into()),
+                    Box::new(Term::Abstraction(
+                        "y".into(),
+                        Type::Variable("b".into()),
+                        Box::new(Term::Variable("x".into())),
+                    )),
+                )),
+            )),
+        );
+        let expected = Type::ForAll(
+            "a".into(),
+            Box::new(Type::ForAll(
+                "b".into(),
+                Box::new(Type::Fn(
+                    Box::new(Type::Variable("a".into())),
+                    Box::new(Type::Fn(
+                        Box::new(Type::Variable("b".into())),
+                        Box::new(Type::Variable("a".into())),
+                    )),
+                )),
+            )),
+        );
+        assert_eq!(k.type_closed(), Some(expected));
+    }
+
+    #[test]
+    fn s_type() {
+        let s = Term::TypeAbstraction(
+            "a".into(),
+            Box::new(Term::TypeAbstraction(
+                "b".into(),
+                Box::new(Term::TypeAbstraction(
+                    "c".into(),
+                    Box::new(Term::Abstraction(
+                        "x".into(),
+                        Type::Fn(
+                            Box::new(Type::Variable("a".into())),
+                            Box::new(Type::Fn(
+                                Box::new(Type::Variable("b".into())),
+                                Box::new(Type::Variable("c".into())),
+                            )),
+                        ),
+                        Box::new(Term::Abstraction(
+                            "y".into(),
+                            Type::Fn(
+                                Box::new(Type::Variable("a".into())),
+                                Box::new(Type::Variable("b".into())),
+                            ),
+                            Box::new(Term::Abstraction(
+                                "z".into(),
+                                Type::Variable("a".into()),
+                                Box::new(Term::Application(
+                                    Box::new(Term::Application(
+                                        Box::new(Term::Variable("x".into())),
+                                        Box::new(Term::Variable("z".into())),
+                                    )),
+                                    Box::new(Term::Application(
+                                        Box::new(Term::Variable("y".into())),
+                                        Box::new(Term::Variable("z".into())),
+                                    )),
+                                )),
+                            )),
+                        )),
+                    )),
+                )),
+            )),
+        );
+        let expected = Type::ForAll(
+            "a".into(),
+            Box::new(Type::ForAll(
+                "b".into(),
+                Box::new(Type::ForAll(
+                    "c".into(),
+                    Box::new(Type::Fn(
+                        Box::new(Type::Fn(
+                            Box::new(Type::Variable("a".into())),
+                            Box::new(Type::Fn(
+                                Box::new(Type::Variable("b".into())),
+                                Box::new(Type::Variable("c".into())),
+                            )),
+                        )),
+                        Box::new(Type::Fn(
+                            Box::new(Type::Fn(
+                                Box::new(Type::Variable("a".into())),
+                                Box::new(Type::Variable("b".into())),
+                            )),
+                            Box::new(Type::Fn(
+                                Box::new(Type::Variable("a".into())),
+                                Box::new(Type::Variable("c".into())),
+                            )),
+                        )),
+                    )),
+                )),
+            )),
+        );
+        assert_eq!(s.type_closed(), Some(expected));
     }
 }
