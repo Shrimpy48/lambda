@@ -1,3 +1,5 @@
+pub mod self_interpret;
+
 use std::collections::HashSet;
 use std::fmt;
 
@@ -795,5 +797,49 @@ mod tests {
             )),
         );
         assert_eq!(s.type_closed(), Some(expected));
+    }
+
+    #[test]
+    fn self_app() {
+        let xx = Term::Abstraction(
+            "x".into(),
+            Type::ForAll(
+                "a".into(),
+                Box::new(Type::Fn(
+                    Box::new(Type::Variable("a".into())),
+                    Box::new(Type::Variable("a".into())),
+                )),
+            ),
+            Box::new(Term::Application(
+                Box::new(Term::TypeApplication(
+                    Box::new(Term::Variable("x".into())),
+                    Type::ForAll(
+                        "a".into(),
+                        Box::new(Type::Fn(
+                            Box::new(Type::Variable("a".into())),
+                            Box::new(Type::Variable("a".into())),
+                        )),
+                    ),
+                )),
+                Box::new(Term::Variable("x".into())),
+            )),
+        );
+        let expected = Type::Fn(
+            Box::new(Type::ForAll(
+                "a".into(),
+                Box::new(Type::Fn(
+                    Box::new(Type::Variable("a".into())),
+                    Box::new(Type::Variable("a".into())),
+                )),
+            )),
+            Box::new(Type::ForAll(
+                "a".into(),
+                Box::new(Type::Fn(
+                    Box::new(Type::Variable("a".into())),
+                    Box::new(Type::Variable("a".into())),
+                )),
+            )),
+        );
+        assert_eq!(xx.type_closed(), Some(expected));
     }
 }
