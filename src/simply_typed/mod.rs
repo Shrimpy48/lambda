@@ -3,7 +3,7 @@ pub mod general;
 use std::collections::HashSet;
 use std::fmt;
 
-use super::{fresh_var, untyped};
+use super::*;
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum Type {
@@ -327,6 +327,37 @@ impl Into<untyped::Term> for Term {
 
 impl Into<Box<untyped::Term>> for Box<Term> {
     fn into(self) -> Box<untyped::Term> {
+        Box::new((*self).into())
+    }
+}
+
+impl Into<system_f::Term> for Term {
+    fn into(self) -> system_f::Term {
+        match self {
+            Self::Variable(x) => system_f::Term::Variable(x),
+            Self::Abstraction(x, ty, t) => system_f::Term::Abstraction(x, ty.into(), t.into()),
+            Self::Application(t, u) => system_f::Term::Application(t.into(), u.into()),
+        }
+    }
+}
+
+impl Into<system_f::Type> for Type {
+    fn into(self) -> system_f::Type {
+        match self {
+            Self::Base => system_f::Type::Base,
+            Self::Fn(t, u) => system_f::Type::Fn(t.into(), u.into()),
+        }
+    }
+}
+
+impl Into<Box<system_f::Term>> for Box<Term> {
+    fn into(self) -> Box<system_f::Term> {
+        Box::new((*self).into())
+    }
+}
+
+impl Into<Box<system_f::Type>> for Box<Type> {
+    fn into(self) -> Box<system_f::Type> {
         Box::new((*self).into())
     }
 }
