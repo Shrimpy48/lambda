@@ -1,26 +1,53 @@
 use std::{env, fs};
 
-use lambda::system_f::*;
+use lambda::lambda_omega::*;
 
 fn main() {
-    for term in [
-        self_interpret::id_(),
-        self_interpret::true_(),
-        self_interpret::false_(),
-        self_interpret::not_(),
-        self_interpret::interpreter(),
-    ] {
-        let ty = term.type_closed().expect("term should be well-typed");
-        let term2 = Term::Application(
-            Box::new(Term::TypeApplication(
-                Box::new(self_interpret::interpreter()),
-                ty,
+    let pair = Type::Abstraction(
+        "x".into(),
+        Kind::Type,
+        Box::new(Type::Abstraction(
+            "y".into(),
+            Kind::Type,
+            Box::new(Type::Fn(
+                Box::new(Type::Fn(
+                    Box::new(Type::Variable("x".into())),
+                    Box::new(Type::Fn(
+                        Box::new(Type::Variable("y".into())),
+                        Box::new(Type::Base),
+                    )),
+                )),
+                Box::new(Type::Base),
             )),
-            Box::new(self_interpret::shallow_encode(term.clone())),
-        );
-        assert_eq!(term2.evaluate(), term);
-        println!("{}", term);
-    }
+        )),
+    );
+    let make_pair = Term::Abstraction(
+        "x".into(),
+        Type::Variable("a".into()),
+        Box::new(Term::Abstraction(
+            "y".into(),
+            Type::Variable("b".into()),
+            Box::new(Term::Abstraction(
+                "f".into(),
+                Type::Fn(
+                    Box::new(Type::Variable("a".into())),
+                    Box::new(Type::Fn(
+                        Box::new(Type::Variable("b".into())),
+                        Box::new(Type::Variable("c".into())),
+                    )),
+                ),
+                Box::new(Term::Application(
+                    Box::new(Term::Application(
+                        Box::new(Term::Variable("f".into())),
+                        Box::new(Term::Variable("x".into())),
+                    )),
+                    Box::new(Term::Variable("y".into())),
+                )),
+            )),
+        )),
+    );
+    println!("{}", pair);
+    println!("{}", make_pair);
 }
 
 // fn main() {

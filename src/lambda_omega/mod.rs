@@ -311,7 +311,7 @@ impl Type {
 
 impl PartialEq for Type {
     fn eq(&self, other: &Self) -> bool {
-        self.alpha_equivalent(other)
+        self.evaluate().alpha_equivalent(&other.evaluate())
     }
 }
 
