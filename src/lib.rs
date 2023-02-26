@@ -1,8 +1,9 @@
 use std::collections::HashSet;
 
+pub mod lambda_omega;
+pub mod lambda_p;
 pub mod simply_typed;
 pub mod system_f;
-pub mod lambda_omega;
 pub mod untyped;
 
 fn fresh_var(vs: &HashSet<String>) -> String {
