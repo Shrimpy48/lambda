@@ -3,8 +3,6 @@ use std::fmt;
 
 use super::{fresh_var, untyped};
 
-// TODO: check typing rules
-
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum Kind {
     Type,
@@ -555,7 +553,7 @@ impl Term {
                 if let Some(Type::Fn(v, a1, b)) = t.type_in(type_env) {
                     let a2 = u.type_in(type_env)?;
                     if a1.as_ref() == &a2 {
-                        Some(b.as_ref().clone())
+                        Some(b.term_substitute(&v, u))
                     } else {
                         None
                     }
