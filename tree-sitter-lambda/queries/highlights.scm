@@ -1,6 +1,11 @@
-(abstraction bound:(identifier) @variable.parameter)
+(abstraction bound:(variable) @variable.parameter)
+(function input_name:(variable) @variable.parameter)
 
-(identifier) @variable
+(variable) @variable
+
+(constant) @symbol
+
+(sort) @type.builtin
 
 [
   (line_comment)
@@ -10,19 +15,24 @@
 [
   "\\"
   "λ"
+  "Λ"
+  "Π"
+  "TT"
   "->"
   "→"
   "⟶"
 ] @operator
 
 [
-  "." 
+  "."
   ":"
+  "::"
 ] @punctuation.delimiter
 
 [
   "("
   ")"
+  "["
+  "]"
 ] @punctuation.bracket
 
-(base_type) @type

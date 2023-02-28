@@ -8,15 +8,15 @@ S combinator
 
 (source
   (abstraction
-    (identifier)
+    (variable)
     (abstraction
-      (identifier)
+      (variable)
       (abstraction
-        (identifier)
+        (variable)
         (application 
           (application 
-            (identifier) 
-            (identifier)) 
+            (variable) 
+            (variable)) 
           (application 
-            (identifier) 
-            (identifier)))))))
+            (variable) 
+            (variable)))))))

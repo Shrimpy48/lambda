@@ -5,13 +5,21 @@ module.exports = grammar({
     source: $ => $._term,
 
     _term: $ => choice(
-        $.identifier,
+        $.variable,
+        $.sort,
+        $.constant,
         $.abstraction,
         $.application,
+        $.function,
         seq('(', $._term, ')'),
+        seq('[', $._term, ']'),
         ),
 
-    identifier: $ => /[a-z_][a-z0-9_]*/,
+    sort: $ => choice('*', '◻'),
+
+    variable: $ => /[a-zA-Z_][a-zA-Z0-9_]*'*/,
+
+    constant: $ => choice("i", "ι"),
 
     application: $ => prec.left(1, seq(
         field('lhs', $._term),
@@ -19,25 +27,26 @@ module.exports = grammar({
     )),
 
     abstraction: $ => seq(
-        choice("\\", "λ"),
-        field('bound', $.identifier),
-        optional(seq(":", field('bind_type', $._type))),
+        choice("\\", "λ", "Λ"),
+        field('bound', $.variable),
+        optional(seq(choice(":", "::"), field('bind_type', $._term))),
         ".",
         field('body', $._term)
     ),
 
-    _type: $ => choice(
-        $.base_type,
-        $.function_type,
-        seq('(', $._type, ')')
-    ),
-
-    base_type: $ => choice("i", "ι"),
-
-    function_type: $ => prec.right(1, seq(
-        $._type, 
-        choice("->", "→", "⟶"), 
-        $._type
+    function: $ => choice(
+        seq(
+            choice("TT", "Π", "∀"),
+            optional(seq(field('input_name', $.variable), /::?/)), 
+            field('input', $._term),
+            ".",
+            field('output', $._term)
+        ),
+        prec.right(1, seq(
+            field('input', $._term), 
+            choice("->", "→", "⟶"), 
+            field('output', $._term)
+        )
     )),
 
     block_comment: $ => seq(

@@ -8,5 +8,5 @@ I combinator
 
 (source
   (abstraction
-    (identifier)
-    (identifier)))
+    (variable)
+    (variable)))

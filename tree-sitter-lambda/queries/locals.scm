@@ -1,5 +1,7 @@
 (abstraction) @local.scope
+(function) @local.scope
 
-(abstraction bound:(identifier) @local.definition)
+(abstraction bound:(variable) @local.definition)
+(function input_name:(variable) @local.definition)
 
-(identifier) @local.reference
+(variable) @local.reference

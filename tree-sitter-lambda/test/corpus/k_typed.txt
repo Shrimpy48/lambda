@@ -8,11 +8,11 @@ K combinator
 
 (source
   (abstraction
-    (identifier)
-    (function_type
-      (base_type)
-      (base_type))
+    (variable)
+    (function
+      (constant)
+      (constant))
     (abstraction
-      (identifier)
-      (base_type)
-      (identifier))))
+      (variable)
+      (constant)
+      (variable))))

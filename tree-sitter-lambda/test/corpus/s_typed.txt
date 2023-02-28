@@ -8,30 +8,30 @@ S combinator
 
 (source
   (abstraction
-    (identifier)
-    (function_type
-      (function_type
-        (base_type)
-        (base_type))
-      (function_type
-        (base_type)
-        (base_type)))
+    (variable)
+    (function
+      (function
+        (constant)
+        (constant))
+      (function
+        (constant)
+        (constant)))
     (abstraction
-      (identifier)
-      (function_type
-        (function_type
-          (base_type)
-          (base_type))
-        (base_type))
+      (variable)
+      (function
+        (function
+          (constant)
+          (constant))
+        (constant))
       (abstraction
-        (identifier)
-        (function_type
-          (base_type)
-          (base_type))        
+        (variable)
+        (function
+          (constant)
+          (constant))        
         (application 
           (application 
-            (identifier) 
-            (identifier)) 
+            (variable) 
+            (variable)) 
           (application 
-            (identifier) 
-            (identifier)))))))
+            (variable) 
+            (variable)))))))

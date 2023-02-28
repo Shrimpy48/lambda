@@ -8,7 +8,7 @@ K combinator
 
 (source
   (abstraction
-    (identifier)
+    (variable)
     (abstraction
-      (identifier)
-      (identifier))))
+      (variable)
+      (variable))))
