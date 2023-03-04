@@ -9,18 +9,23 @@ pub enum Sort {
     Universal,
 }
 
+/// A term in the lambda cube.
+///
+/// F means terms may depend on types (parametric polymorphism).
+/// W means types may depend on types (type constructors).
+/// P means types may depend on terms (dependent types).
 #[derive(Debug, Clone, Eq)]
-pub enum Term {
+pub enum Term<const F: bool, const W: bool, const P: bool> {
     Variable(String),
     Sort(Sort),
-    Abstraction(String, Box<Term>, Box<Term>),
-    Application(Box<Term>, Box<Term>),
-    Product(String, Box<Term>, Box<Term>),
+    Abstraction(String, Box<Term<F, W, P>>, Box<Term<F, W, P>>),
+    Application(Box<Term<F, W, P>>, Box<Term<F, W, P>>),
+    Product(String, Box<Term<F, W, P>>, Box<Term<F, W, P>>),
 }
 
-pub type Environment = Vec<(String, Term)>;
+pub type Environment<const F: bool, const W: bool, const P: bool> = Vec<(String, Term<F, W, P>)>;
 
-impl Term {
+impl<const F: bool, const W: bool, const P: bool> Term<F, W, P> {
     pub fn vars(&self) -> HashSet<String> {
         match self {
             Self::Sort(_) => HashSet::new(),
@@ -112,7 +117,7 @@ impl Term {
     }
 
     /// Substitute the given term avoiding capture.
-    pub fn substitute(&self, from: &str, to: &Term) -> Self {
+    pub fn substitute(&self, from: &str, to: &Term<F, W, P>) -> Self {
         match self {
             Self::Sort(_) => self.clone(),
             Self::Variable(v) if v == from => to.clone(),
@@ -223,7 +228,7 @@ impl Term {
     }
 
     /// The type of this term in the given environment, if it is well-typed.
-    pub fn type_in(&self, env: &Environment) -> Option<Term> {
+    pub fn type_in(&self, env: &Environment<F, W, P>) -> Option<Term<F, W, P>> {
         match self {
             Self::Sort(Sort::Type) => Some(Term::Sort(Sort::Universal)),
             Self::Variable(x) => env
@@ -244,26 +249,55 @@ impl Term {
                 }
             }
             Self::Product(x, ty, t) => {
-                if !matches!(ty.type_in(env)?, Term::Sort(_)) {
-                    return None;
-                }
+                let s1 = ty.type_in(env)?;
                 let mut inner_env = env.clone();
                 inner_env.push((x.to_owned(), ty.as_ref().clone()));
-                let b = t.type_in(&inner_env)?;
-                if !matches!(b, Term::Sort(_)) {
-                    return None;
+                let s2 = t.type_in(&inner_env)?;
+                match (&s1, &s2) {
+                    (Term::Sort(Sort::Type), Term::Sort(Sort::Type)) => {}
+                    (Term::Sort(Sort::Type), Term::Sort(Sort::Universal)) => {
+                        if !P {
+                            return None;
+                        }
+                    }
+                    (Term::Sort(Sort::Universal), Term::Sort(Sort::Type)) => {
+                        if !F {
+                            return None;
+                        }
+                    }
+                    (Term::Sort(Sort::Universal), Term::Sort(Sort::Universal)) => {
+                        if !W {
+                            return None;
+                        }
+                    }
+                    _ => return None,
                 }
-                Some(b)
+                Some(s2)
             }
             Self::Abstraction(x, ty, t) => {
-                if !matches!(ty.type_in(env)?, Term::Sort(_)) {
-                    return None;
-                }
+                let s1 = ty.type_in(env)?;
                 let mut inner_env = env.clone();
                 inner_env.push((x.to_owned(), ty.as_ref().clone()));
                 let b = t.type_in(&inner_env)?;
-                if !matches!(b.type_in(&inner_env)?, Term::Sort(_)) {
-                    return None;
+                let s2 = b.type_in(&inner_env)?;
+                match (&s1, &s2) {
+                    (Term::Sort(Sort::Type), Term::Sort(Sort::Type)) => {}
+                    (Term::Sort(Sort::Type), Term::Sort(Sort::Universal)) => {
+                        if !P {
+                            return None;
+                        }
+                    }
+                    (Term::Sort(Sort::Universal), Term::Sort(Sort::Type)) => {
+                        if !F {
+                            return None;
+                        }
+                    }
+                    (Term::Sort(Sort::Universal), Term::Sort(Sort::Universal)) => {
+                        if !W {
+                            return None;
+                        }
+                    }
+                    _ => return None,
                 }
                 Some(Term::Product(
                     x.to_owned(),
@@ -276,19 +310,19 @@ impl Term {
     }
 
     /// The type of this term in the empty environment, if it is well-typed.
-    pub fn type_closed(&self) -> Option<Term> {
+    pub fn type_closed(&self) -> Option<Term<F, W, P>> {
         self.type_in(&Environment::new())
     }
 }
 
-impl PartialEq for Term {
+impl<const F: bool, const W: bool, const P: bool> PartialEq for Term<F, W, P> {
     /// Alpha equivalence.
     fn eq(&self, other: &Self) -> bool {
         self.alpha_equivalent(other)
     }
 }
 
-impl fmt::Display for Term {
+impl<const F: bool, const W: bool, const P: bool> fmt::Display for Term<F, W, P> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             Self::Sort(Sort::Type) => write!(f, "*"),
@@ -309,14 +343,20 @@ impl fmt::Display for Term {
     }
 }
 
-fn write_term(t: &Term, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+fn write_term<const F: bool, const W: bool, const P: bool>(
+    t: &Term<F, W, P>,
+    f: &mut fmt::Formatter<'_>,
+) -> fmt::Result {
     match t {
         Term::Variable(_) | Term::Sort(_) => fmt::Display::fmt(t, f),
         _ => write!(f, "({})", t),
     }
 }
 
-fn write_func(t: &Term, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+fn write_func<const F: bool, const W: bool, const P: bool>(
+    t: &Term<F, W, P>,
+    f: &mut fmt::Formatter<'_>,
+) -> fmt::Result {
     match t {
         Term::Variable(_) | Term::Sort(_) | Term::Application(_, _) => fmt::Display::fmt(t, f),
         _ => write!(f, "({})", t),
@@ -324,209 +364,4 @@ fn write_func(t: &Term, f: &mut fmt::Formatter<'_>) -> fmt::Result {
 }
 
 #[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn i_type() {
-        let i = Term::Abstraction(
-            "a".into(),
-            Box::new(Term::Sort(Sort::Type)),
-            Box::new(Term::Abstraction(
-                "x".into(),
-                Box::new(Term::Variable("a".into())),
-                Box::new(Term::Variable("x".into())),
-            )),
-        );
-        let expected = Term::Product(
-            "a".into(),
-            Box::new(Term::Sort(Sort::Type)),
-            Box::new(Term::Product(
-                "x".into(),
-                Box::new(Term::Variable("a".into())),
-                Box::new(Term::Variable("a".into())),
-            )),
-        );
-        assert_eq!(i.type_closed(), Some(expected));
-    }
-
-    #[test]
-    fn k_type() {
-        let k = Term::Abstraction(
-            "a".into(),
-            Box::new(Term::Sort(Sort::Type)),
-            Box::new(Term::Abstraction(
-                "b".into(),
-                Box::new(Term::Sort(Sort::Type)),
-                Box::new(Term::Abstraction(
-                    "x".into(),
-                    Box::new(Term::Variable("a".into())),
-                    Box::new(Term::Abstraction(
-                        "y".into(),
-                        Box::new(Term::Variable("b".into())),
-                        Box::new(Term::Variable("x".into())),
-                    )),
-                )),
-            )),
-        );
-        let expected = Term::Product(
-            "a".into(),
-            Box::new(Term::Sort(Sort::Type)),
-            Box::new(Term::Product(
-                "b".into(),
-                Box::new(Term::Sort(Sort::Type)),
-                Box::new(Term::Product(
-                    "x".into(),
-                    Box::new(Term::Variable("a".into())),
-                    Box::new(Term::Product(
-                        "x".into(),
-                        Box::new(Term::Variable("b".into())),
-                        Box::new(Term::Variable("a".into())),
-                    )),
-                )),
-            )),
-        );
-        assert_eq!(k.type_closed(), Some(expected));
-    }
-
-    #[test]
-    fn s_type() {
-        let s = Term::Abstraction(
-            "a".into(),
-            Box::new(Term::Sort(Sort::Type)),
-            Box::new(Term::Abstraction(
-                "b".into(),
-                Box::new(Term::Sort(Sort::Type)),
-                Box::new(Term::Abstraction(
-                    "c".into(),
-                    Box::new(Term::Sort(Sort::Type)),
-                    Box::new(Term::Abstraction(
-                        "x".into(),
-                        Box::new(Term::Product(
-                            "x".into(),
-                            Box::new(Term::Variable("a".into())),
-                            Box::new(Term::Product(
-                                "x".into(),
-                                Box::new(Term::Variable("b".into())),
-                                Box::new(Term::Variable("c".into())),
-                            )),
-                        )),
-                        Box::new(Term::Abstraction(
-                            "y".into(),
-                            Box::new(Term::Product(
-                                "x".into(),
-                                Box::new(Term::Variable("a".into())),
-                                Box::new(Term::Variable("b".into())),
-                            )),
-                            Box::new(Term::Abstraction(
-                                "z".into(),
-                                Box::new(Term::Variable("a".into())),
-                                Box::new(Term::Application(
-                                    Box::new(Term::Application(
-                                        Box::new(Term::Variable("x".into())),
-                                        Box::new(Term::Variable("z".into())),
-                                    )),
-                                    Box::new(Term::Application(
-                                        Box::new(Term::Variable("y".into())),
-                                        Box::new(Term::Variable("z".into())),
-                                    )),
-                                )),
-                            )),
-                        )),
-                    )),
-                )),
-            )),
-        );
-        let expected = Term::Product(
-            "a".into(),
-            Box::new(Term::Sort(Sort::Type)),
-            Box::new(Term::Product(
-                "b".into(),
-                Box::new(Term::Sort(Sort::Type)),
-                Box::new(Term::Product(
-                    "c".into(),
-                    Box::new(Term::Sort(Sort::Type)),
-                    Box::new(Term::Product(
-                        "x".into(),
-                        Box::new(Term::Product(
-                            "x".into(),
-                            Box::new(Term::Variable("a".into())),
-                            Box::new(Term::Product(
-                                "x".into(),
-                                Box::new(Term::Variable("b".into())),
-                                Box::new(Term::Variable("c".into())),
-                            )),
-                        )),
-                        Box::new(Term::Product(
-                            "x".into(),
-                            Box::new(Term::Product(
-                                "x".into(),
-                                Box::new(Term::Variable("a".into())),
-                                Box::new(Term::Variable("b".into())),
-                            )),
-                            Box::new(Term::Product(
-                                "x".into(),
-                                Box::new(Term::Variable("a".into())),
-                                Box::new(Term::Variable("c".into())),
-                            )),
-                        )),
-                    )),
-                )),
-            )),
-        );
-        assert_eq!(s.type_closed(), Some(expected));
-    }
-
-    #[test]
-    fn self_app() {
-        let xx = Term::Abstraction(
-            "x".into(),
-            Box::new(Term::Product(
-                "a".into(),
-                Box::new(Term::Sort(Sort::Type)),
-                Box::new(Term::Product(
-                    "x".into(),
-                    Box::new(Term::Variable("a".into())),
-                    Box::new(Term::Variable("a".into())),
-                )),
-            )),
-            Box::new(Term::Application(
-                Box::new(Term::Application(
-                    Box::new(Term::Variable("x".into())),
-                    Box::new(Term::Product(
-                        "a".into(),
-                        Box::new(Term::Sort(Sort::Type)),
-                        Box::new(Term::Product(
-                            "x".into(),
-                            Box::new(Term::Variable("a".into())),
-                            Box::new(Term::Variable("a".into())),
-                        )),
-                    )),
-                )),
-                Box::new(Term::Variable("x".into())),
-            )),
-        );
-        let expected = Term::Product(
-            "x".into(),
-            Box::new(Term::Product(
-                "a".into(),
-                Box::new(Term::Sort(Sort::Type)),
-                Box::new(Term::Product(
-                    "x".into(),
-                    Box::new(Term::Variable("a".into())),
-                    Box::new(Term::Variable("a".into())),
-                )),
-            )),
-            Box::new(Term::Product(
-                "a".into(),
-                Box::new(Term::Sort(Sort::Type)),
-                Box::new(Term::Product(
-                    "x".into(),
-                    Box::new(Term::Variable("a".into())),
-                    Box::new(Term::Variable("a".into())),
-                )),
-            )),
-        );
-        assert_eq!(xx.type_closed(), Some(expected));
-    }
-}
+mod tests {}

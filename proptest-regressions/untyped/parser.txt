@@ -1,0 +1,8 @@
+# Seeds for failure cases proptest has generated in the past. It is
+# automatically read and these particular cases re-run before any
+# novel cases are generated.
+#
+# It is recommended to check this file in to source control so that
+# everyone who runs the test benefits from these saved cases.
+cc 35c004840a7407013224c5b17f4b0266c648515d7fc8e602ea0420ba11e10ebf # shrinks to f = Application(Application(Application(Variable("_"), Application(Variable("__8p0e"), Variable("la2_73__ri__4zrlid"))), Variable("b7xn88754v_")), Abstraction("o1_e__t", Abstraction("_tm920t_tuemz__4__stpf1__83__", Abstraction("_7f_7_4acg213__3c0lx__", Variable("__6_7tlml74_z57urt20_0lz96h")))))
+cc a7083cdbf3255b5bd6a224e5f34f60ba150ec40623eb907b6e160b082e48340e # shrinks to f = Application(Abstraction("_", Application(Variable("i"), Variable("_"))), Variable("a"))

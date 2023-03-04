@@ -32,10 +32,6 @@
             "named": true
           },
           {
-            "type": "constant",
-            "named": true
-          },
-          {
             "type": "function",
             "named": true
           },
@@ -75,10 +71,6 @@
           },
           {
             "type": "application",
-            "named": true
-          },
-          {
-            "type": "constant",
             "named": true
           },
           {
@@ -140,10 +132,6 @@
             "named": true
           },
           {
-            "type": "constant",
-            "named": true
-          },
-          {
             "type": "function",
             "named": true
           },
@@ -186,10 +174,6 @@
             "named": true
           },
           {
-            "type": "constant",
-            "named": true
-          },
-          {
             "type": "function",
             "named": true
           },
@@ -207,11 +191,6 @@
   },
   {
     "type": "block_comment",
-    "named": true,
-    "fields": {}
-  },
-  {
-    "type": "constant",
     "named": true,
     "fields": {}
   },
@@ -245,10 +224,6 @@
           },
           {
             "type": "application",
-            "named": true
-          },
-          {
-            "type": "constant",
             "named": true
           },
           {
@@ -304,10 +279,6 @@
             "named": true
           },
           {
-            "type": "constant",
-            "named": true
-          },
-          {
             "type": "function",
             "named": true
           },
@@ -347,10 +318,6 @@
         },
         {
           "type": "application",
-          "named": true
-        },
-        {
-          "type": "constant",
           "named": true
         },
         {
@@ -425,10 +392,6 @@
     "named": false
   },
   {
-    "type": "i",
-    "named": false
-  },
-  {
     "type": "variable",
     "named": true
   },
@@ -438,10 +401,6 @@
   },
   {
     "type": "Π",
-    "named": false
-  },
-  {
-    "type": "ι",
     "named": false
   },
   {

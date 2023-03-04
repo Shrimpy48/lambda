@@ -10,9 +10,9 @@ K combinator
   (abstraction
     (variable)
     (function
-      (constant)
-      (constant))
+      (variable)
+      (variable))
     (abstraction
       (variable)
-      (constant)
+      (variable)
       (variable))))

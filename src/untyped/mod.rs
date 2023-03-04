@@ -224,12 +224,12 @@ impl Arbitrary for Term {
 
 #[cfg(test)]
 fn arb_term() -> impl Strategy<Value = Term> {
-    let leaf = "[a-z_][a-z0-9_]*".prop_map(Term::Variable);
+    let leaf = "[a-zA-Zα-κμ-ωΑ-ΚΜ-ΟΡ-Ω_][a-zA-Zα-κμ-ωΑ-ΚΜ-ΟΡ-Ω0-9_]*'*".prop_map(Term::Variable);
     leaf.prop_recursive(16, 256, 2, |inner| {
         prop_oneof![
             (inner.clone(), inner.clone())
                 .prop_map(|(f, x)| Term::Application(Box::new(f), Box::new(x))),
-            ("[a-z_][a-z0-9_]*", inner.clone())
+            ("[a-zA-Zα-κμ-ωΑ-ΚΜ-ΟΡ-Ω_][a-zA-Zα-κμ-ωΑ-ΚΜ-ΟΡ-Ω0-9_]*'*", inner.clone())
                 .prop_map(|(x, b)| Term::Abstraction(x, Box::new(b))),
         ]
     })
@@ -295,4 +295,15 @@ impl TryFrom<Term> for de_bruijn::Term {
     fn try_from(value: Term) -> Result<Self, Self::Error> {
         to_de_bruijn(&value, &HashMap::new()).ok_or(())
     }
+}
+
+// convenience functions
+pub fn variable(v: impl Into<String>) -> Term {
+    Term::Variable(v.into())
+}
+pub fn abstraction(v: impl Into<String>, t: impl Into<Term>) -> Term {
+    Term::Abstraction(v.into(), Box::new(t.into()))
+}
+pub fn application(t: impl Into<Term>, u: impl Into<Term>) -> Term {
+    Term::Application(Box::new(t.into()), Box::new(u.into()))
 }

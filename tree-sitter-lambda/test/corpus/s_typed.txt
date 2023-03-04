@@ -11,23 +11,23 @@ S combinator
     (variable)
     (function
       (function
-        (constant)
-        (constant))
+        (variable)
+        (variable))
       (function
-        (constant)
-        (constant)))
+        (variable)
+        (variable)))
     (abstraction
       (variable)
       (function
         (function
-          (constant)
-          (constant))
-        (constant))
+          (variable)
+          (variable))
+        (variable))
       (abstraction
         (variable)
         (function
-          (constant)
-          (constant))        
+          (variable)
+          (variable))        
         (application 
           (application 
             (variable) 

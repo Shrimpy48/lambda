@@ -10,6 +10,6 @@ I combinator
   (abstraction
     (variable)
     (function
-      (constant)
-      (constant))
+      (variable)
+      (variable))
     (variable)))

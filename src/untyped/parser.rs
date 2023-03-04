@@ -72,10 +72,10 @@ fn walk_identifier<'a>(
     source: &'a [u8],
     cursor: &mut TreeCursor<'a>,
 ) -> Result<String, ParseError> {
-    let node = advance(cursor)?.ok_or(ParseError::msg("missing identifier"))?;
-    if node.kind() != "identifier" {
+    let node = advance(cursor)?.ok_or(ParseError::msg("missing variable"))?;
+    if node.kind() != "variable" {
         return Err(ParseError::msg(format!(
-            "expected identifier but got {}",
+            "expected variable but got {}",
             node.kind()
         )));
     }
@@ -86,7 +86,7 @@ fn walk_identifier<'a>(
 fn walk_term<'a>(source: &'a [u8], cursor: &mut TreeCursor<'a>) -> Result<Term, ParseError> {
     let node = advance(cursor)?.ok_or(ParseError::msg("missing term"))?;
     match node.kind() {
-        "identifier" => Ok(Term::Variable(walk_identifier(source, cursor)?)),
+        "variable" => Ok(Term::Variable(walk_identifier(source, cursor)?)),
         "abstraction" => Ok(walk_abstraction(source, cursor)?),
         "application" => Ok(walk_application(source, cursor)?),
         _ => Err(ParseError::msg(format!(

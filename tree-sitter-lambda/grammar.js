@@ -7,7 +7,6 @@ module.exports = grammar({
     _term: $ => choice(
         $.variable,
         $.sort,
-        $.constant,
         $.abstraction,
         $.application,
         $.function,
@@ -17,9 +16,8 @@ module.exports = grammar({
 
     sort: $ => choice('*', '◻'),
 
-    variable: $ => /[a-zA-Z_][a-zA-Z0-9_]*'*/,
-
-    constant: $ => choice("i", "ι"),
+    // Exclude lambda and uppercase pi
+    variable: $ => /[a-zA-Zα-κμ-ωΑ-ΚΜ-ΟΡ-Ω_][a-zA-Zα-κμ-ωΑ-ΚΜ-ΟΡ-Ω0-9_]*'*/,
 
     application: $ => prec.left(1, seq(
         field('lhs', $._term),

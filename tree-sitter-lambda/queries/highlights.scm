@@ -3,8 +3,6 @@
 
 (variable) @variable
 
-(constant) @symbol
-
 (sort) @type.builtin
 
 [
