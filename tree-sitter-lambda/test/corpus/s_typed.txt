@@ -9,23 +9,23 @@ S combinator
 (source
   (abstraction
     (variable)
-    (function
-      (function
+    (product
+      (product
         (variable)
         (variable))
-      (function
+      (product
         (variable)
         (variable)))
     (abstraction
       (variable)
-      (function
-        (function
+      (product
+        (product
           (variable)
           (variable))
         (variable))
       (abstraction
         (variable)
-        (function
+        (product
           (variable)
           (variable))        
         (application 

@@ -1,5 +1,5 @@
 (abstraction bound:(variable) @variable.parameter)
-(function input_name:(variable) @variable.parameter)
+(product input_name:(variable) @variable.parameter)
 
 (variable) @variable
 

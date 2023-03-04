@@ -26,7 +26,7 @@
         },
         {
           "type": "SYMBOL",
-          "name": "function"
+          "name": "product"
         },
         {
           "type": "SEQ",
@@ -182,7 +182,7 @@
         }
       ]
     },
-    "function": {
+    "product": {
       "type": "CHOICE",
       "members": [
         {
@@ -206,22 +206,39 @@
               ]
             },
             {
+              "type": "FIELD",
+              "name": "input_name",
+              "content": {
+                "type": "SYMBOL",
+                "name": "variable"
+              }
+            },
+            {
               "type": "CHOICE",
               "members": [
                 {
                   "type": "SEQ",
                   "members": [
                     {
-                      "type": "FIELD",
-                      "name": "input_name",
-                      "content": {
-                        "type": "SYMBOL",
-                        "name": "variable"
-                      }
+                      "type": "CHOICE",
+                      "members": [
+                        {
+                          "type": "STRING",
+                          "value": ":"
+                        },
+                        {
+                          "type": "STRING",
+                          "value": "::"
+                        }
+                      ]
                     },
                     {
-                      "type": "PATTERN",
-                      "value": "::?"
+                      "type": "FIELD",
+                      "name": "input",
+                      "content": {
+                        "type": "SYMBOL",
+                        "name": "_term"
+                      }
                     }
                   ]
                 },
@@ -229,14 +246,6 @@
                   "type": "BLANK"
                 }
               ]
-            },
-            {
-              "type": "FIELD",
-              "name": "input",
-              "content": {
-                "type": "SYMBOL",
-                "name": "_term"
-              }
             },
             {
               "type": "STRING",

@@ -1,6 +1,8 @@
 use std::collections::HashSet;
 use std::fmt;
 
+pub mod parser;
+
 use super::*;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]

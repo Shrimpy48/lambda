@@ -32,7 +32,7 @@
             "named": true
           },
           {
-            "type": "function",
+            "type": "product",
             "named": true
           },
           {
@@ -74,7 +74,7 @@
             "named": true
           },
           {
-            "type": "function",
+            "type": "product",
             "named": true
           },
           {
@@ -132,7 +132,7 @@
             "named": true
           },
           {
-            "type": "function",
+            "type": "product",
             "named": true
           },
           {
@@ -174,7 +174,7 @@
             "named": true
           },
           {
-            "type": "function",
+            "type": "product",
             "named": true
           },
           {
@@ -195,12 +195,17 @@
     "fields": {}
   },
   {
-    "type": "function",
+    "type": "line_comment",
+    "named": true,
+    "fields": {}
+  },
+  {
+    "type": "product",
     "named": true,
     "fields": {
       "input": {
         "multiple": true,
-        "required": true,
+        "required": false,
         "types": [
           {
             "type": "(",
@@ -227,7 +232,7 @@
             "named": true
           },
           {
-            "type": "function",
+            "type": "product",
             "named": true
           },
           {
@@ -279,7 +284,7 @@
             "named": true
           },
           {
-            "type": "function",
+            "type": "product",
             "named": true
           },
           {
@@ -293,11 +298,6 @@
         ]
       }
     }
-  },
-  {
-    "type": "line_comment",
-    "named": true,
-    "fields": {}
   },
   {
     "type": "sort",
@@ -321,7 +321,7 @@
           "named": true
         },
         {
-          "type": "function",
+          "type": "product",
           "named": true
         },
         {

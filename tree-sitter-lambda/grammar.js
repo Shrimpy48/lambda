@@ -9,7 +9,7 @@ module.exports = grammar({
         $.sort,
         $.abstraction,
         $.application,
-        $.function,
+        $.product,
         seq('(', $._term, ')'),
         seq('[', $._term, ']'),
         ),
@@ -32,11 +32,11 @@ module.exports = grammar({
         field('body', $._term)
     ),
 
-    function: $ => choice(
+    product: $ => choice(
         seq(
             choice("TT", "Π", "∀"),
-            optional(seq(field('input_name', $.variable), /::?/)), 
-            field('input', $._term),
+            field('input_name', $.variable),
+            optional(seq(choice(":", "::"), field('input', $._term))),
             ".",
             field('output', $._term)
         ),

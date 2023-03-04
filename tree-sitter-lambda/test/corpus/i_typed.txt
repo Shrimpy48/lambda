@@ -9,7 +9,7 @@ I combinator
 (source
   (abstraction
     (variable)
-    (function
+    (product
       (variable)
       (variable))
     (variable)))

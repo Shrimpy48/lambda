@@ -9,7 +9,7 @@ K combinator
 (source
   (abstraction
     (variable)
-    (function
+    (product
       (variable)
       (variable))
     (abstraction

@@ -1,28 +1,58 @@
 use std::{env, fs};
 
-use lambda::untyped::*;
+use lambda::calc_of_cons::*;
 
 fn main() {
-    let f = application(
-        application(
-            application(
-                variable("_"),
-                application(variable("__8p0e"), variable("la2_73__ri__4zrlid")),
-            ),
-            variable("b7xn88754v_"),
-        ),
-        abstraction(
-            "o1_e__t",
-            abstraction(
-                "_tm920t_tuemz__4__stpf1__83__",
-                abstraction(
-                    "_7f_7_4acg213__3c0lx__",
-                    variable("__6_7tlml74_z57urt20_0lz96h"),
-                ),
-            ),
-        ),
+    let s = Term::Abstraction(
+        "a".into(),
+        Box::new(Term::Sort(Sort::Type)),
+        Box::new(Term::Abstraction(
+            "b".into(),
+            Box::new(Term::Sort(Sort::Type)),
+            Box::new(Term::Abstraction(
+                "c".into(),
+                Box::new(Term::Sort(Sort::Type)),
+                Box::new(Term::Abstraction(
+                    "x".into(),
+                    Box::new(Term::Product(
+                        "x".into(),
+                        Box::new(Term::Variable("a".into())),
+                        Box::new(Term::Product(
+                            "x".into(),
+                            Box::new(Term::Variable("b".into())),
+                            Box::new(Term::Variable("c".into())),
+                        )),
+                    )),
+                    Box::new(Term::Abstraction(
+                        "y".into(),
+                        Box::new(Term::Product(
+                            "x".into(),
+                            Box::new(Term::Variable("a".into())),
+                            Box::new(Term::Variable("b".into())),
+                        )),
+                        Box::new(Term::Abstraction(
+                            "z".into(),
+                            Box::new(Term::Variable("a".into())),
+                            Box::new(Term::Application(
+                                Box::new(Term::Application(
+                                    Box::new(Term::Variable("x".into())),
+                                    Box::new(Term::Variable("z".into())),
+                                )),
+                                Box::new(Term::Application(
+                                    Box::new(Term::Variable("y".into())),
+                                    Box::new(Term::Variable("z".into())),
+                                )),
+                            )),
+                        )),
+                    )),
+                )),
+            )),
+        )),
     );
-    println!("{f}");
+    let string = format!("{s}");
+    println!("{string}");
+    let s2 = parser::parse(string).unwrap();
+    assert_eq!(s2, s);
 }
 
 // fn main() {
