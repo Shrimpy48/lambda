@@ -229,7 +229,10 @@ fn arb_term() -> impl Strategy<Value = Term> {
         prop_oneof![
             (inner.clone(), inner.clone())
                 .prop_map(|(f, x)| Term::Application(Box::new(f), Box::new(x))),
-            ("[a-zA-Zα-κμ-ωΑ-ΚΜ-ΟΡ-Ω_][a-zA-Zα-κμ-ωΑ-ΚΜ-ΟΡ-Ω0-9_]*'*", inner.clone())
+            (
+                "[a-zA-Zα-κμ-ωΑ-ΚΜ-ΟΡ-Ω_][a-zA-Zα-κμ-ωΑ-ΚΜ-ΟΡ-Ω0-9_]*'*",
+                inner.clone()
+            )
                 .prop_map(|(x, b)| Term::Abstraction(x, Box::new(b))),
         ]
     })

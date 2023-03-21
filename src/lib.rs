@@ -4,6 +4,7 @@ pub mod calc_of_cons;
 pub mod cube;
 pub mod lambda_omega;
 pub mod lambda_p;
+pub mod lang;
 pub mod simply_typed;
 pub mod system_f;
 pub mod untyped;
