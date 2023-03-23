@@ -14,7 +14,7 @@ module.exports = grammar({
         seq('[', $._term, ']'),
         ),
 
-    sort: $ => choice('*', '◻'),
+    sort: $ => choice('*', '□'),
 
     // Exclude lambda and uppercase pi
     variable: $ => /[a-zA-Zα-κμ-ωΑ-ΚΜ-ΟΡ-Ω_][a-zA-Zα-κμ-ωΑ-ΚΜ-ΟΡ-Ω0-9_]*'*/,

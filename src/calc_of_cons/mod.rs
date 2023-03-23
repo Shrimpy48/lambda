@@ -3,8 +3,15 @@ use std::fmt;
 
 pub mod parser;
 
+#[cfg(test)]
+use proptest::prelude::*;
+
+#[cfg(test)]
+use proptest_derive::Arbitrary;
+
 use super::*;
 
+#[cfg_attr(test, derive(Arbitrary))]
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Sort {
     Type,
@@ -281,6 +288,42 @@ impl Term {
     pub fn type_closed(&self) -> Option<Term> {
         self.type_in(&Environment::new())
     }
+}
+
+#[cfg(test)]
+impl Arbitrary for Term {
+    type Parameters = ();
+    type Strategy = BoxedStrategy<Self>;
+
+    fn arbitrary_with(_args: Self::Parameters) -> Self::Strategy {
+        arb_term().boxed()
+    }
+}
+
+#[cfg(test)]
+fn arb_term() -> impl Strategy<Value = Term> {
+    let leaf = prop_oneof![
+        "[a-zA-Zα-κμ-ωΑ-ΚΜ-ΟΡ-Ω_][a-zA-Zα-κμ-ωΑ-ΚΜ-ΟΡ-Ω0-9_]*'*".prop_map(Term::Variable),
+        any::<Sort>().prop_map(Term::Sort)
+    ];
+    leaf.prop_recursive(16, 256, 2, |inner| {
+        prop_oneof![
+            (inner.clone(), inner.clone())
+                .prop_map(|(f, x)| Term::Application(Box::new(f), Box::new(x))),
+            (
+                "[a-zA-Zα-κμ-ωΑ-ΚΜ-ΟΡ-Ω_][a-zA-Zα-κμ-ωΑ-ΚΜ-ΟΡ-Ω0-9_]*'*",
+                inner.clone(),
+                inner.clone()
+            )
+                .prop_map(|(x, t, b)| Term::Abstraction(x, Box::new(t), Box::new(b))),
+            (
+                "[a-zA-Zα-κμ-ωΑ-ΚΜ-ΟΡ-Ω_][a-zA-Zα-κμ-ωΑ-ΚΜ-ΟΡ-Ω0-9_]*'*",
+                inner.clone(),
+                inner.clone()
+            )
+                .prop_map(|(x, t, b)| Term::Product(x, Box::new(t), Box::new(b))),
+        ]
+    })
 }
 
 impl PartialEq for Term {

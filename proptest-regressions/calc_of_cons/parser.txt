@@ -1,0 +1,7 @@
+# Seeds for failure cases proptest has generated in the past. It is
+# automatically read and these particular cases re-run before any
+# novel cases are generated.
+#
+# It is recommended to check this file in to source control so that
+# everyone who runs the test benefits from these saved cases.
+cc b98d3c8f3233868203e550f0ce9e0426e3428462f0495946130f7ed7da794587 # shrinks to f = Abstraction("Ρ", Abstraction("A'''''''''''''", Sort(Universal), Sort(Universal)), Abstraction("YSYθtηL\u{3a2}ωY''''''", Application(Product("κUYC\u{3a2}bVσijICτζ__BzΞΜvν_8δeSJR6ΖOα'''''''", Variable("jR5ZwPΝsZψΣZ05πκa_Wm_Ψ8_8q7o''''''''''''''''''''''"), Sort(Universal)), Application(Sort(Type), Sort(Type))), Application(Application(Abstraction("ΞΣθsπ7B\u{3a2}ν''''''''''''''''''''''''''", Variable("XΥVFbRmΡ6ΖΩςC3idιDSKo3OAυ0D2α''''''''''''''''''"), Sort(Type)), Application(Abstraction("khmGΚς_ΩvνcV__1β_SCδΡ0AΤiΖT''''''''''''''''''", Variable("τ'''''"), Variable("QN_δ'''''''")), Variable("\u{3a2}I'''''''''''''''''''"))), Abstraction("τΓμφ\u{3a2}4ΩΖLB1_ωiΦiΘ_ΞGτqο8Lβς6ΙΖ'''''''''", Variable("_γIzθΧ2_DθΨ_Y5''''''''''''''''''''''''''''''''"), Variable("VrBim0Tι6__617ΗLGJz8ΧπJβFΨp__'''''''''''''''''''''''''''''''")))))

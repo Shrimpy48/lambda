@@ -122,14 +122,20 @@ fn walk_product<'a>(source: &'a [u8], cursor: &mut TreeCursor<'a>) -> Result<Ter
     if !cursor.goto_first_child() {
         return Err(ParseError::msg("product should have children"));
     }
+    advance(cursor)?;
     let bound = if matches!(cursor.field_name(), Some("input_name")) {
         let res = Some(walk_identifier(source, cursor)?);
         if !cursor.goto_next_sibling() {
             return Err(ParseError::msg("product should have input type"));
         }
         res
-    } else {
+    } else if matches!(cursor.field_name(), Some("input")) {
         None
+    } else {
+        return Err(ParseError::msg(format!(
+            "unexpected node in product: {}",
+            cursor.node().to_sexp()
+        )));
     };
     let ty = Box::new(walk_term(source, cursor)?);
     if !cursor.goto_next_sibling() {
@@ -174,16 +180,17 @@ fn advance<'a>(cursor: &mut TreeCursor<'a>) -> Result<Option<Node<'a>>, ParseErr
 
 #[cfg(test)]
 mod tests {
-    use super::{parse, Term};
+    use super::*;
     use proptest::prelude::*;
 
     proptest! {
-        // #[test]
-        // fn printed_output_parses_correctly(f in any::<Term>()) {
-        //     let s = format!("{}", f);
-        //     let f2 = parse(s).expect("printed output should be parseable");
-        //     prop_assert_eq!(f2, f);
-        // }
+        #[test]
+        fn printed_output_parses_correctly(f in any::<Term>()) {
+            let s = format!("{}", f);
+            let f2 = parse(s).expect("printed output should be parseable");
+            prop_assert_eq!(f2, f);
+        }
+
 
         #[test]
         fn parser_doesnt_crash(s in "\\PC*") {

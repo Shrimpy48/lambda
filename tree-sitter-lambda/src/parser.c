@@ -61,7 +61,7 @@ static const char * const ts_symbol_names[] = {
   [anon_sym_LBRACK] = "[",
   [anon_sym_RBRACK] = "]",
   [anon_sym_STAR] = "*",
-  [anon_sym_] = "◻",
+  [anon_sym_] = "□",
   [sym_variable] = "variable",
   [anon_sym_BSLASH] = "\\",
   [anon_sym_2] = "λ",
@@ -423,7 +423,7 @@ static bool ts_lex(TSLexer *lexer, TSStateId state) {
       if (lookahead == 955) ADVANCE(21);
       if (lookahead == 8594) ADVANCE(30);
       if (lookahead == 8704) ADVANCE(28);
-      if (lookahead == 9723) ADVANCE(16);
+      if (lookahead == 9633) ADVANCE(16);
       if (lookahead == 10230) ADVANCE(31);
       if (lookahead == '\t' ||
           lookahead == '\n' ||
@@ -505,7 +505,7 @@ static bool ts_lex(TSLexer *lexer, TSStateId state) {
       if (lookahead == 955) ADVANCE(21);
       if (lookahead == 8594) ADVANCE(30);
       if (lookahead == 8704) ADVANCE(28);
-      if (lookahead == 9723) ADVANCE(16);
+      if (lookahead == 9633) ADVANCE(16);
       if (lookahead == 10230) ADVANCE(31);
       if (lookahead == '\t' ||
           lookahead == '\n' ||

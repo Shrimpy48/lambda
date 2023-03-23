@@ -674,12 +674,12 @@ impl fmt::Display for PrimFunc {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             Self::Add => write!(f, "+"),
-            Self::Sub => write!(f, "-"),
-            Self::Mul => write!(f, "*"),
+            Self::Sub => write!(f, "−"),
+            Self::Mul => write!(f, "×"),
             Self::IntEq => write!(f, "="),
             Self::Gt => write!(f, ">"),
-            Self::Or => write!(f, "|"),
-            Self::Not => write!(f, "!"),
+            Self::Or => write!(f, "∨"),
+            Self::Not => write!(f, "¬"),
             Self::Rec => write!(f, "rec"),
             Self::If => write!(f, "if"),
             Self::For => write!(f, "for"),
