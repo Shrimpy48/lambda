@@ -2,6 +2,7 @@ use std::collections::HashSet;
 
 pub mod calc_of_cons;
 pub mod cube;
+pub mod hindley_milner;
 pub mod lambda_omega;
 pub mod lambda_p;
 pub mod lang;
