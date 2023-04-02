@@ -85,13 +85,9 @@ impl Term {
                         Box::new(t2),
                         Box::new(u.as_ref().clone()),
                     ))
-                } else if let Some(u2) = u.beta_reduce_lazy() {
-                    Some(Self::Application(
-                        Box::new(t.as_ref().clone()),
-                        Box::new(u2),
-                    ))
                 } else {
-                    None
+                    u.beta_reduce_lazy()
+                        .map(|u2| Self::Application(Box::new(t.as_ref().clone()), Box::new(u2)))
                 }
             }
             Self::Abstraction(t) => t
@@ -219,9 +215,7 @@ fn arb_term_with() -> impl Strategy<Value = TermGen> {
             (inner.clone(), inner.clone()).prop_map(|(f1, f2)| TermGen::new(move |n| {
                 Term::Application(Box::new((f1.func)(n)), Box::new((f2.func)(n)))
             })),
-            inner
-                .clone()
-                .prop_map(|f| TermGen::new(move |n| Term::Abstraction(Box::new((f.func)(n + 1))))),
+            inner.prop_map(|f| TermGen::new(move |n| Term::Abstraction(Box::new((f.func)(n + 1))))),
         ]
     })
 }
@@ -339,8 +333,6 @@ mod tests {
         }
     }
 
-    use proptest::prelude::*;
-
     proptest! {
         #[test]
         fn conversion_matches(f in any::<Term>()) {
@@ -356,7 +348,7 @@ mod tests {
                 (None, None) => {},
                 (None, Some(_)) | (Some(_), None) => panic!("different number of beta-reductions"),
                 (Some(t1), Some(t2)) => {
-                    let t1_conv: Term = t1.clone().try_into().unwrap();
+                    let t1_conv: Term = t1.try_into().unwrap();
                     assert_eq!(t1_conv, t2);
                 }
             }

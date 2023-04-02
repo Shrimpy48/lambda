@@ -52,10 +52,7 @@ pub type Environment = Vec<(String, Term)>;
 
 impl PrimFunc {
     pub fn is_const_safe(self) -> bool {
-        match self {
-            Self::Rec => false,
-            _ => true,
-        }
+        matches!(self, Self::Rec)
     }
 }
 
@@ -508,14 +505,10 @@ impl Term {
                         Box::new(ty.as_ref().clone()),
                         Box::new(t2),
                     ))
-                } else if let Some(ty2) = ty.beta_reduce_lazy() {
-                    Some(Self::Abstraction(
-                        v.to_owned(),
-                        Box::new(ty2),
-                        Box::new(t.as_ref().clone()),
-                    ))
                 } else {
-                    None
+                    ty.beta_reduce_lazy().map(|ty2| {
+                        Self::Abstraction(v.to_owned(), Box::new(ty2), Box::new(t.as_ref().clone()))
+                    })
                 }
             }
             Self::Product(v, ty, t) => {
@@ -525,14 +518,10 @@ impl Term {
                         Box::new(ty.as_ref().clone()),
                         Box::new(t2),
                     ))
-                } else if let Some(ty2) = ty.beta_reduce_lazy() {
-                    Some(Self::Product(
-                        v.to_owned(),
-                        Box::new(ty2),
-                        Box::new(t.as_ref().clone()),
-                    ))
                 } else {
-                    None
+                    ty.beta_reduce_lazy().map(|ty2| {
+                        Self::Product(v.to_owned(), Box::new(ty2), Box::new(t.as_ref().clone()))
+                    })
                 }
             }
             Self::Variable(_) | Self::Sort(_) | Self::Primitive(_) => None,
@@ -563,7 +552,7 @@ impl Term {
                 if let Some(Term::Product(v, a1, b)) = t.type_in(env) {
                     let a2 = u.type_in(env)?;
                     if a1.as_ref() == &a2 {
-                        let res = b.substitute(&v, &u);
+                        let res = b.substitute(&v, u);
                         if !res.is_const_safe() {
                             return None;
                         }
@@ -584,7 +573,7 @@ impl Term {
                 }
                 let ty = ty.evaluate();
                 let mut inner_env = env.clone();
-                inner_env.push((x.to_owned(), ty.clone()));
+                inner_env.push((x.to_owned(), ty));
                 let b = t.type_in(&inner_env)?;
                 if !matches!(b, Term::Sort(_)) {
                     return None;
@@ -605,11 +594,7 @@ impl Term {
                 if !matches!(b.type_in(&inner_env)?, Term::Sort(_)) {
                     return None;
                 }
-                Some(Term::Product(
-                    x.to_owned(),
-                    Box::new(ty.clone()),
-                    Box::new(b),
-                ))
+                Some(Term::Product(x.to_owned(), Box::new(ty), Box::new(b)))
             }
             Self::Sort(Sort::Universal) => None,
         }
@@ -704,6 +689,4 @@ fn write_func(t: &Term, f: &mut fmt::Formatter<'_>) -> fmt::Result {
 }
 
 #[cfg(test)]
-mod tests {
-    use super::*;
-}
+mod tests {}

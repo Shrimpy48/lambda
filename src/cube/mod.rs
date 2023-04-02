@@ -171,13 +171,9 @@ impl<const F: bool, const W: bool, const P: bool> Term<F, W, P> {
                         Box::new(t2),
                         Box::new(u.as_ref().clone()),
                     ))
-                } else if let Some(u2) = u.beta_reduce_lazy() {
-                    Some(Self::Application(
-                        Box::new(t.as_ref().clone()),
-                        Box::new(u2),
-                    ))
                 } else {
-                    None
+                    u.beta_reduce_lazy()
+                        .map(|u2| Self::Application(Box::new(t.as_ref().clone()), Box::new(u2)))
                 }
             }
             Self::Abstraction(v, ty, t) => {
@@ -187,14 +183,10 @@ impl<const F: bool, const W: bool, const P: bool> Term<F, W, P> {
                         Box::new(ty.as_ref().clone()),
                         Box::new(t2),
                     ))
-                } else if let Some(ty2) = ty.beta_reduce_lazy() {
-                    Some(Self::Abstraction(
-                        v.to_owned(),
-                        Box::new(ty2),
-                        Box::new(t.as_ref().clone()),
-                    ))
                 } else {
-                    None
+                    ty.beta_reduce_lazy().map(|ty2| {
+                        Self::Abstraction(v.to_owned(), Box::new(ty2), Box::new(t.as_ref().clone()))
+                    })
                 }
             }
             Self::Product(v, ty, t) => {
@@ -204,14 +196,10 @@ impl<const F: bool, const W: bool, const P: bool> Term<F, W, P> {
                         Box::new(ty.as_ref().clone()),
                         Box::new(t2),
                     ))
-                } else if let Some(ty2) = ty.beta_reduce_lazy() {
-                    Some(Self::Product(
-                        v.to_owned(),
-                        Box::new(ty2),
-                        Box::new(t.as_ref().clone()),
-                    ))
                 } else {
-                    None
+                    ty.beta_reduce_lazy().map(|ty2| {
+                        Self::Product(v.to_owned(), Box::new(ty2), Box::new(t.as_ref().clone()))
+                    })
                 }
             }
             Self::Variable(_) | Self::Sort(_) => None,
@@ -240,7 +228,7 @@ impl<const F: bool, const W: bool, const P: bool> Term<F, W, P> {
                 if let Some(Term::Product(v, a1, b)) = t.type_in(env) {
                     let a2 = u.type_in(env)?;
                     if a1.as_ref() == &a2 {
-                        Some(b.substitute(&v, &u).evaluate())
+                        Some(b.substitute(&v, u).evaluate())
                     } else {
                         None
                     }

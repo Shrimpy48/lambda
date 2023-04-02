@@ -137,13 +137,9 @@ impl Term {
                         Box::new(t2),
                         Box::new(u.as_ref().clone()),
                     ))
-                } else if let Some(u2) = u.beta_reduce_lazy() {
-                    Some(Self::Application(
-                        Box::new(t.as_ref().clone()),
-                        Box::new(u2),
-                    ))
                 } else {
-                    None
+                    u.beta_reduce_lazy()
+                        .map(|u2| Self::Application(Box::new(t.as_ref().clone()), Box::new(u2)))
                 }
             }
             Self::Abstraction(x, ty, t) => t
@@ -202,13 +198,9 @@ impl Term {
                         Box::new(t2),
                         Box::new(u.as_ref().clone()),
                     ))
-                } else if let Some(u2) = u.eta_reduce_lazy() {
-                    Some(Self::Application(
-                        Box::new(t.as_ref().clone()),
-                        Box::new(u2),
-                    ))
                 } else {
-                    None
+                    u.eta_reduce_lazy()
+                        .map(|u2| Self::Application(Box::new(t.as_ref().clone()), Box::new(u2)))
                 }
             }
             _ => None,
@@ -315,50 +307,50 @@ fn write_ty(ty: &Type, f: &mut fmt::Formatter<'_>) -> fmt::Result {
     }
 }
 
-impl Into<untyped::Term> for Term {
-    fn into(self) -> untyped::Term {
-        match self {
-            Self::Variable(x) => untyped::Term::Variable(x),
-            Self::Abstraction(x, _, t) => untyped::Term::Abstraction(x, t.into()),
-            Self::Application(t, u) => untyped::Term::Application(t.into(), u.into()),
+impl From<Term> for untyped::Term {
+    fn from(val: Term) -> Self {
+        match val {
+            Term::Variable(x) => untyped::Term::Variable(x),
+            Term::Abstraction(x, _, t) => untyped::Term::Abstraction(x, t.into()),
+            Term::Application(t, u) => untyped::Term::Application(t.into(), u.into()),
         }
     }
 }
 
-impl Into<Box<untyped::Term>> for Box<Term> {
-    fn into(self) -> Box<untyped::Term> {
-        Box::new((*self).into())
+impl From<Box<Term>> for Box<untyped::Term> {
+    fn from(val: Box<Term>) -> Self {
+        Box::new((*val).into())
     }
 }
 
-impl Into<system_f::Term> for Term {
-    fn into(self) -> system_f::Term {
-        match self {
-            Self::Variable(x) => system_f::Term::Variable(x),
-            Self::Abstraction(x, ty, t) => system_f::Term::Abstraction(x, ty.into(), t.into()),
-            Self::Application(t, u) => system_f::Term::Application(t.into(), u.into()),
+impl From<Term> for system_f::Term {
+    fn from(val: Term) -> Self {
+        match val {
+            Term::Variable(x) => system_f::Term::Variable(x),
+            Term::Abstraction(x, ty, t) => system_f::Term::Abstraction(x, ty.into(), t.into()),
+            Term::Application(t, u) => system_f::Term::Application(t.into(), u.into()),
         }
     }
 }
 
-impl Into<system_f::Type> for Type {
-    fn into(self) -> system_f::Type {
-        match self {
-            Self::Base => system_f::Type::Base,
-            Self::Fn(t, u) => system_f::Type::Fn(t.into(), u.into()),
+impl From<Type> for system_f::Type {
+    fn from(val: Type) -> Self {
+        match val {
+            Type::Base => system_f::Type::Base,
+            Type::Fn(t, u) => system_f::Type::Fn(t.into(), u.into()),
         }
     }
 }
 
-impl Into<Box<system_f::Term>> for Box<Term> {
-    fn into(self) -> Box<system_f::Term> {
-        Box::new((*self).into())
+impl From<Box<Term>> for Box<system_f::Term> {
+    fn from(val: Box<Term>) -> Self {
+        Box::new((*val).into())
     }
 }
 
-impl Into<Box<system_f::Type>> for Box<Type> {
-    fn into(self) -> Box<system_f::Type> {
-        Box::new((*self).into())
+impl From<Box<Type>> for Box<system_f::Type> {
+    fn from(val: Box<Type>) -> Self {
+        Box::new((*val).into())
     }
 }
 

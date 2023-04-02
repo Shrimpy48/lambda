@@ -122,13 +122,9 @@ impl Term {
                         Box::new(t2),
                         Box::new(u.as_ref().clone()),
                     ))
-                } else if let Some(u2) = u.beta_reduce_lazy() {
-                    Some(Self::Application(
-                        Box::new(t.as_ref().clone()),
-                        Box::new(u2),
-                    ))
                 } else {
-                    None
+                    u.beta_reduce_lazy()
+                        .map(|u2| Self::Application(Box::new(t.as_ref().clone()), Box::new(u2)))
                 }
             }
             Self::Abstraction(x, t) => t
@@ -185,13 +181,9 @@ impl Term {
                         Box::new(t2),
                         Box::new(u.as_ref().clone()),
                     ))
-                } else if let Some(u2) = u.eta_reduce_lazy() {
-                    Some(Self::Application(
-                        Box::new(t.as_ref().clone()),
-                        Box::new(u2),
-                    ))
                 } else {
-                    None
+                    u.eta_reduce_lazy()
+                        .map(|u2| Self::Application(Box::new(t.as_ref().clone()), Box::new(u2)))
                 }
             }
             _ => None,
@@ -231,7 +223,7 @@ fn arb_term() -> impl Strategy<Value = Term> {
                 .prop_map(|(f, x)| Term::Application(Box::new(f), Box::new(x))),
             (
                 "[a-zA-Zα-κμ-ωΑ-ΚΜ-ΟΡ-Ω_][a-zA-Zα-κμ-ωΑ-ΚΜ-ΟΡ-Ω0-9_]*'*",
-                inner.clone()
+                inner
             )
                 .prop_map(|(x, b)| Term::Abstraction(x, Box::new(b))),
         ]

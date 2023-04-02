@@ -1,7 +1,7 @@
 use std::collections::HashSet;
 use std::fmt;
 
-use super::{fresh_var, untyped};
+use super::fresh_var;
 
 #[derive(Debug, Clone, Eq)]
 pub enum Type {
@@ -115,9 +115,7 @@ impl Type {
     }
 
     pub fn is_subtype_in(&self, type_env: &TypeEnvironment, other: &Self) -> bool {
-        if self == other {
-            true
-        } else if other == &Self::Top {
+        if self == other || other == &Self::Top {
             true
         } else {
             match (self, other) {
@@ -444,22 +442,17 @@ impl Term {
                         Box::new(t2),
                         Box::new(u.as_ref().clone()),
                     ))
-                } else if let Some(u2) = u.beta_reduce_lazy() {
-                    Some(Self::Application(
-                        Box::new(t.as_ref().clone()),
-                        Box::new(u2),
-                    ))
                 } else {
-                    None
+                    u.beta_reduce_lazy()
+                        .map(|u2| Self::Application(Box::new(t.as_ref().clone()), Box::new(u2)))
                 }
             }
             Self::TypeApplication(t, u) => {
                 if let Self::TypeAbstraction(x, _, b) = t.as_ref() {
                     Some(b.type_substitute(x, u))
-                } else if let Some(t2) = t.beta_reduce_lazy() {
-                    Some(Self::TypeApplication(Box::new(t2), u.clone()))
                 } else {
-                    None
+                    t.beta_reduce_lazy()
+                        .map(|t2| Self::TypeApplication(Box::new(t2), u.clone()))
                 }
             }
             Self::Abstraction(x, ty, t) => t
@@ -528,11 +521,9 @@ impl Term {
                     .map(|u2| Self::Abstraction(x.to_owned(), ty.clone(), Box::new(u2)))
             }
             Self::TypeAbstraction(x, b, t) => {
-                if let Self::TypeApplication(f, u) = t.as_ref() {
-                    if let Type::Variable(y) = u {
-                        if x == y && !f.free_vars().contains(x) {
-                            return Some(f.as_ref().clone());
-                        }
+                if let Self::TypeApplication(f, Type::Variable(y)) = t.as_ref() {
+                    if x == y && !f.free_vars().contains(x) {
+                        return Some(f.as_ref().clone());
                     }
                 }
                 t.eta_reduce_lazy()
@@ -544,22 +535,14 @@ impl Term {
                         Box::new(t2),
                         Box::new(u.as_ref().clone()),
                     ))
-                } else if let Some(u2) = u.eta_reduce_lazy() {
-                    Some(Self::Application(
-                        Box::new(t.as_ref().clone()),
-                        Box::new(u2),
-                    ))
                 } else {
-                    None
+                    u.eta_reduce_lazy()
+                        .map(|u2| Self::Application(Box::new(t.as_ref().clone()), Box::new(u2)))
                 }
             }
-            Self::TypeApplication(t, u) => {
-                if let Some(t2) = t.eta_reduce_lazy() {
-                    Some(Self::TypeApplication(Box::new(t2), u.clone()))
-                } else {
-                    None
-                }
-            }
+            Self::TypeApplication(t, u) => t
+                .eta_reduce_lazy()
+                .map(|t2| Self::TypeApplication(Box::new(t2), u.clone())),
             _ => None,
         }
     }
@@ -787,6 +770,4 @@ impl fmt::Display for TypeEnvironment {
 }
 
 #[cfg(test)]
-mod tests {
-    use super::*;
-}
+mod tests {}

@@ -154,13 +154,9 @@ impl Type {
                         Box::new(t2),
                         Box::new(u.as_ref().clone()),
                     ))
-                } else if let Some(u2) = u.beta_reduce_lazy() {
-                    Some(Self::Application(
-                        Box::new(t.as_ref().clone()),
-                        Box::new(u2),
-                    ))
                 } else {
-                    None
+                    u.beta_reduce_lazy()
+                        .map(|u2| Self::Application(Box::new(t.as_ref().clone()), Box::new(u2)))
                 }
             }
             Self::Abstraction(x, ty, t) => t
@@ -169,10 +165,9 @@ impl Type {
             Self::Fn(t, u) => {
                 if let Some(t2) = t.beta_reduce_lazy() {
                     Some(Self::Fn(Box::new(t2), Box::new(u.as_ref().clone())))
-                } else if let Some(u2) = u.beta_reduce_lazy() {
-                    Some(Self::Fn(Box::new(t.as_ref().clone()), Box::new(u2)))
                 } else {
-                    None
+                    u.beta_reduce_lazy()
+                        .map(|u2| Self::Fn(Box::new(t.as_ref().clone()), Box::new(u2)))
                 }
             }
             _ => None,
@@ -237,22 +232,17 @@ impl Type {
                         Box::new(t2),
                         Box::new(u.as_ref().clone()),
                     ))
-                } else if let Some(u2) = u.eta_reduce_lazy() {
-                    Some(Self::Application(
-                        Box::new(t.as_ref().clone()),
-                        Box::new(u2),
-                    ))
                 } else {
-                    None
+                    u.eta_reduce_lazy()
+                        .map(|u2| Self::Application(Box::new(t.as_ref().clone()), Box::new(u2)))
                 }
             }
             Self::Fn(t, u) => {
                 if let Some(t2) = t.eta_reduce_lazy() {
                     Some(Self::Fn(Box::new(t2), Box::new(u.as_ref().clone())))
-                } else if let Some(u2) = u.eta_reduce_lazy() {
-                    Some(Self::Fn(Box::new(t.as_ref().clone()), Box::new(u2)))
                 } else {
-                    None
+                    u.eta_reduce_lazy()
+                        .map(|u2| Self::Fn(Box::new(t.as_ref().clone()), Box::new(u2)))
                 }
             }
             _ => None,
@@ -432,13 +422,9 @@ impl Term {
                         Box::new(t2),
                         Box::new(u.as_ref().clone()),
                     ))
-                } else if let Some(u2) = u.beta_reduce_lazy() {
-                    Some(Self::Application(
-                        Box::new(t.as_ref().clone()),
-                        Box::new(u2),
-                    ))
                 } else {
-                    None
+                    u.beta_reduce_lazy()
+                        .map(|u2| Self::Application(Box::new(t.as_ref().clone()), Box::new(u2)))
                 }
             }
             Self::Abstraction(x, ty, t) => t
@@ -497,13 +483,9 @@ impl Term {
                         Box::new(t2),
                         Box::new(u.as_ref().clone()),
                     ))
-                } else if let Some(u2) = u.eta_reduce_lazy() {
-                    Some(Self::Application(
-                        Box::new(t.as_ref().clone()),
-                        Box::new(u2),
-                    ))
                 } else {
-                    None
+                    u.eta_reduce_lazy()
+                        .map(|u2| Self::Application(Box::new(t.as_ref().clone()), Box::new(u2)))
                 }
             }
             _ => None,
@@ -643,23 +625,21 @@ fn write_kind(k: &Kind, f: &mut fmt::Formatter<'_>) -> fmt::Result {
     }
 }
 
-impl Into<untyped::Term> for Term {
-    fn into(self) -> untyped::Term {
-        match self {
-            Self::Variable(x) => untyped::Term::Variable(x),
-            Self::Abstraction(x, _, t) => untyped::Term::Abstraction(x, t.into()),
-            Self::Application(t, u) => untyped::Term::Application(t.into(), u.into()),
+impl From<Term> for untyped::Term {
+    fn from(val: Term) -> Self {
+        match val {
+            Term::Variable(x) => untyped::Term::Variable(x),
+            Term::Abstraction(x, _, t) => untyped::Term::Abstraction(x, t.into()),
+            Term::Application(t, u) => untyped::Term::Application(t.into(), u.into()),
         }
     }
 }
 
-impl Into<Box<untyped::Term>> for Box<Term> {
-    fn into(self) -> Box<untyped::Term> {
-        Box::new((*self).into())
+impl From<Box<Term>> for Box<untyped::Term> {
+    fn from(val: Box<Term>) -> Self {
+        Box::new((*val).into())
     }
 }
 
 #[cfg(test)]
-mod tests {
-    use super::*;
-}
+mod tests {}
