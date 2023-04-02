@@ -7,6 +7,7 @@ pub mod lambda_p;
 pub mod lang;
 pub mod simply_typed;
 pub mod system_f;
+pub mod system_f_sub;
 pub mod untyped;
 
 fn fresh_var(vs: &HashSet<String>) -> String {
