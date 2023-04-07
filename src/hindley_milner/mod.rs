@@ -78,22 +78,16 @@ impl Type {
     }
 
     fn instantiate(&self, var_count: &mut usize) -> Self {
-        match self {
-            Self::Variable(_) => self.clone(),
-            Self::GenVariable(v) => {
-                let t2 = self
-                    .gen_substitute(
-                        &[(v.to_owned(), Self::Variable(format!("t{}", var_count)))].into(),
-                    )
-                    .instantiate(var_count);
+        let mapping = self
+            .gen_vars()
+            .into_iter()
+            .map(|gv| {
+                let tv = Self::Variable(format!("t{}", var_count));
                 *var_count += 1;
-                t2
-            }
-            Self::Fn(t, u) => Self::Fn(
-                Box::new(t.instantiate(var_count)),
-                Box::new(u.instantiate(var_count)),
-            ),
-        }
+                (gv, tv)
+            })
+            .collect();
+        self.gen_substitute(&mapping)
     }
 
     fn generalise(&self, free_vars: &HashSet<String>) -> Self {
@@ -554,6 +548,4 @@ impl From<Box<untyped::Term>> for Box<Term> {
 }
 
 #[cfg(test)]
-mod tests {
-    use super::*;
-}
+mod tests {}
