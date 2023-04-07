@@ -108,8 +108,8 @@ fn unify(mut equalities: Vec<(Type, Type)>) -> Option<HashMap<String, Type>> {
         match equality {
             (lhs, rhs) if lhs == rhs => continue,
             (Type::Fn(t1, u1), Type::Fn(t2, u2)) => {
-                equalities.push((t1.as_ref().clone(), t2.as_ref().clone()));
-                equalities.push((u1.as_ref().clone(), u2.as_ref().clone()));
+                equalities.push((*t1, *t2));
+                equalities.push((*u1, *u2));
             }
             (Type::Variable(v), t) | (t, Type::Variable(v)) if !t.contains_var(&v) => {
                 let new_mapping = [(v, t)].into();
