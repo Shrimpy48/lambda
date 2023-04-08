@@ -100,10 +100,46 @@ impl Type {
             _ => self.clone(),
         }
     }
+
+    /// Whether the given types are equivalent up to variable naming.
+    pub fn equivalent(&self, other: &Self) -> bool {
+        let mut names = HashMap::new();
+        let mut gen_names = HashMap::new();
+        self.equivalent_impl(&mut names, &mut gen_names, other)
+    }
+
+    fn equivalent_impl<'a, 'b>(
+        &'a self,
+        names: &mut HashMap<&'a str, &'b str>,
+        gen_names: &mut HashMap<&'a str, &'b str>,
+        other: &'b Self,
+    ) -> bool {
+        match (self, other) {
+            (Self::Variable(x), Self::Variable(y)) => {
+                if let Some(y2) = names.get(x.as_str()) {
+                    y == y2
+                } else {
+                    names.insert(x, y);
+                    true
+                }
+            }
+            (Self::GenVariable(x), Self::GenVariable(y)) => {
+                if let Some(y2) = gen_names.get(x.as_str()) {
+                    y == y2
+                } else {
+                    gen_names.insert(x, y);
+                    true
+                }
+            }
+            (Self::Fn(t1, u1), Self::Fn(t2, u2)) => {
+                t1.equivalent_impl(names, gen_names, t2) && u1.equivalent_impl(names, gen_names, u2)
+            }
+            _ => false,
+        }
+    }
 }
 
-fn unify(mut equalities: Vec<(Type, Type)>) -> Option<HashMap<String, Type>> {
-    let mut mapping: HashMap<String, Type> = HashMap::new();
+fn unify(mut equalities: Vec<(Type, Type)>, mapping: &mut HashMap<String, Type>) -> Option<()> {
     while let Some(equality) = equalities.pop() {
         match equality {
             (lhs, rhs) if lhs == rhs => continue,
@@ -125,7 +161,7 @@ fn unify(mut equalities: Vec<(Type, Type)>) -> Option<HashMap<String, Type>> {
             _ => return None,
         }
     }
-    Some(mapping)
+    Some(())
 }
 
 #[derive(Debug, Clone, Eq)]
@@ -381,17 +417,14 @@ impl Term {
     }
 
     /// Infer the most general type of this term in the given type environment, if it is well-typed.
-    pub fn type_in(&self, type_env: &TypeEnvironment) -> Option<Type> {
-        let mut constraints = Vec::new();
-        let ty = self.type_constraints(type_env, &mut constraints, &mut 0)?;
-        let solution = unify(constraints)?;
-        Some(ty.substitute(&solution))
+    pub fn type_in(&self, type_env: &mut TypeEnvironment) -> Option<Type> {
+        self.type_in_impl(type_env, &mut HashMap::new(), &mut 0)
     }
 
-    fn type_constraints(
+    fn type_in_impl(
         &self,
-        type_env: &TypeEnvironment,
-        constraints: &mut Vec<(Type, Type)>,
+        type_env: &mut TypeEnvironment,
+        subs: &mut HashMap<String, Type>,
         var_count: &mut usize,
     ) -> Option<Type> {
         match self {
@@ -400,40 +433,47 @@ impl Term {
                     .iter()
                     .rev()
                     .find(|(v, _)| v == x)
-                    .map(|(_, t)| t.clone())?;
-                let t2 = t.instantiate(var_count);
-                Some(t2)
+                    .map(|(_, t)| t)?;
+                Some(t.instantiate(var_count))
             }
             Self::Abstraction(x, t) => {
                 let a = Type::Variable(format!("t{}", var_count));
                 *var_count += 1;
-                let mut inner_env = type_env.clone();
-                inner_env.push((x.to_owned(), a.clone()));
-                let b = t.type_constraints(&inner_env, constraints, var_count)?;
-                Some(Type::Fn(Box::new(a), Box::new(b)))
+                type_env.push((x.to_owned(), a.clone()));
+                let b = t.type_in_impl(type_env, subs, var_count);
+                type_env.pop();
+                let a = a.substitute(subs);
+                Some(Type::Fn(Box::new(a), Box::new(b?)))
             }
             Self::Application(t, u) => {
-                let f = t.type_constraints(type_env, constraints, var_count)?;
-                let a = u.type_constraints(type_env, constraints, var_count)?;
+                let f = t.type_in_impl(type_env, subs, var_count)?;
+                let a = u.type_in_impl(type_env, subs, var_count)?;
+                let f = f.substitute(subs);
                 let b = Type::Variable(format!("t{}", var_count));
                 *var_count += 1;
-                constraints.push((f, Type::Fn(Box::new(a), Box::new(b.clone()))));
+                let rhs = Type::Fn(Box::new(a), Box::new(b.clone()));
+                unify(vec![(f, rhs)], subs)?;
+                for (_, t) in type_env.iter_mut() {
+                    *t = t.substitute(subs);
+                }
+                let b = b.substitute(subs);
                 Some(b)
             }
             Self::Let(x, b, o) => {
-                let bt = b.type_constraints(type_env, constraints, var_count)?;
-                let gen = bt.generalise(&free_vars(type_env));
-                let mut inner_env = type_env.clone();
-                inner_env.push((x.to_owned(), gen));
-                let ot = o.type_constraints(&inner_env, constraints, var_count)?;
-                Some(ot)
+                let bt = b.type_in_impl(type_env, subs, var_count)?;
+                let fv = free_vars(type_env);
+                let bt = bt.generalise(&fv);
+                type_env.push((x.to_owned(), bt));
+                let ot = o.type_in_impl(type_env, subs, var_count);
+                type_env.pop();
+                ot
             }
         }
     }
 
     /// The type of this term in the empty type environment, if it is well-typed.
     pub fn type_closed(&self) -> Option<Type> {
-        self.type_in(&TypeEnvironment::new())
+        self.type_in(&mut TypeEnvironment::new())
     }
 }
 
@@ -548,4 +588,70 @@ impl From<Box<untyped::Term>> for Box<Term> {
 }
 
 #[cfg(test)]
-mod tests {}
+mod tests {
+    use super::*;
+
+    fn variable(s: impl Into<String>) -> Term {
+        Term::Variable(s.into())
+    }
+
+    fn application(t: Term, u: Term) -> Term {
+        Term::Application(Box::new(t), Box::new(u))
+    }
+
+    fn abstraction(x: impl Into<String>, b: Term) -> Term {
+        Term::Abstraction(x.into(), Box::new(b))
+    }
+
+    fn let_(x: impl Into<String>, a: Term, b: Term) -> Term {
+        Term::Let(x.into(), Box::new(a), Box::new(b))
+    }
+
+    fn v_t(s: impl Into<String>) -> Type {
+        Type::Variable(s.into())
+    }
+
+    fn fn_t(t: Type, u: Type) -> Type {
+        Type::Fn(Box::new(t), Box::new(u))
+    }
+
+    #[test]
+    fn let_polymorphism() {
+        let term = let_(
+            "two",
+            abstraction(
+                "f",
+                abstraction(
+                    "x",
+                    application(variable("f"), application(variable("f"), variable("x"))),
+                ),
+            ),
+            let_(
+                "three",
+                abstraction(
+                    "f",
+                    abstraction(
+                        "x",
+                        application(
+                            variable("f"),
+                            application(variable("f"), application(variable("f"), variable("x"))),
+                        ),
+                    ),
+                ),
+                let_(
+                    "exp",
+                    abstraction(
+                        "m",
+                        abstraction("n", application(variable("n"), variable("m"))),
+                    ),
+                    application(
+                        application(variable("exp"), variable("two")),
+                        variable("three"),
+                    ),
+                ),
+            ),
+        );
+        let expected_ty = fn_t(fn_t(v_t("a"), v_t("a")), fn_t(v_t("a"), v_t("a")));
+        assert!(term.type_closed().unwrap().equivalent(&expected_ty));
+    }
+}
