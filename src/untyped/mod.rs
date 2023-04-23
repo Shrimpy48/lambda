@@ -6,6 +6,7 @@ use proptest::prelude::*;
 
 use super::fresh_var;
 
+pub mod continuation;
 pub mod de_bruijn;
 pub mod parser;
 
