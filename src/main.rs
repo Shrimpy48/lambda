@@ -1,5 +1,6 @@
 use std::{env, fs};
 
+
 use lambda::hindley_milner::*;
 use lambda::untyped;
 
@@ -117,14 +118,27 @@ use lambda::untyped;
 fn main() {
     let term =
         untyped::parser::parse(fs::read_to_string(env::args().nth(1).unwrap()).unwrap()).unwrap();
-    let mut term: Term = term.into();
-    println!("{} : {}", term, term.type_closed().unwrap());
-    println!("{:?}", term);
-    let mut i: u32 = 0;
-    println!("{}: {}", i, term);
-    while let Some(t) = term.beta_reduce_lazy() {
-        i += 1;
-        println!("{}: {}", i, t);
-        term = t;
-    }
+    let hm_term: Term = term.into();
+    // println!("{} : {}\n", hm_term, hm_term.type_closed().unwrap());
+    // // let f = fresh_var(&term.vars());
+    // // let cont_term = untyped::Term::Abstraction(
+    // //     f.clone(),
+    // //     Box::new(untyped::continuation::cps_convert(
+    // //         &term,
+    // //         &untyped::Term::Variable(f),
+    // //     )),
+    // // );
+    // let cont_term = untyped::Term::Abstraction(
+    //     "cont".into(),
+    //     Box::new(untyped::continuation::cps_convert(
+    //         &term,
+    //         &untyped::Term::Variable("cont".into()),
+    //     )),
+    // );
+    // let hm_term: Term = cont_term.clone().into();
+    // println!("{} : {}\n", hm_term, hm_term.type_closed().unwrap());
+    // let hm_term = hm_term.evaluate();
+    // println!("{} : {}\n", hm_term, hm_term.type_closed().unwrap());
+    let derivation = derivation::type_deriv(&hm_term, &vec![]).unwrap();
+    println!("{}", derivation);
 }

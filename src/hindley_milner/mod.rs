@@ -3,6 +3,8 @@ use std::fmt;
 
 use super::*;
 
+pub mod derivation;
+
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum Type {
     Variable(String),
