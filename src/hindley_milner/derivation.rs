@@ -69,15 +69,19 @@ fn type_deriv_impl(
                 },
             };
             let inst_ty = ty.instantiate(var_count);
-            let inst_p = Proof {
-                premises: vec![var_p],
-                rule: "Inst",
-                conclusion: Judgement {
-                    lhs: type_env.clone(),
-                    rhs: (t.clone(), inst_ty),
-                },
-            };
-            Some(inst_p)
+            if &inst_ty != ty {
+                let inst_p = Proof {
+                    premises: vec![var_p],
+                    rule: "Inst",
+                    conclusion: Judgement {
+                        lhs: type_env.clone(),
+                        rhs: (t.clone(), inst_ty),
+                    },
+                };
+                Some(inst_p)
+            } else {
+                Some(var_p)
+            }
         }
         Term::Abstraction(x, body) => {
             let a = Type::Variable(format!("t{}", var_count));
@@ -135,18 +139,22 @@ fn type_deriv_impl(
                 rule: "Let",
                 conclusion: Judgement {
                     lhs: type_env.clone(),
-                    rhs: (t.clone(), bt),
+                    rhs: (t.clone(), bt.clone()),
                 },
             };
-            let gen_p = Proof {
-                premises: vec![let_p],
-                rule: "Gen",
-                conclusion: Judgement {
-                    lhs: type_env.clone(),
-                    rhs: (t.clone(), gen_t),
-                },
-            };
-            Some(gen_p)
+            if gen_t != bt {
+                let gen_p = Proof {
+                    premises: vec![let_p],
+                    rule: "Gen",
+                    conclusion: Judgement {
+                        lhs: type_env.clone(),
+                        rhs: (t.clone(), gen_t),
+                    },
+                };
+                Some(gen_p)
+            } else {
+                Some(let_p)
+            }
         }
     }
 }
