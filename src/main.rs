@@ -1,6 +1,5 @@
 use std::{env, fs};
 
-
 use lambda::hindley_milner::*;
 use lambda::untyped;
 

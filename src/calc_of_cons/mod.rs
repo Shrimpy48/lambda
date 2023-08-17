@@ -1,6 +1,7 @@
 use std::collections::HashSet;
 use std::fmt;
 
+pub mod infer;
 pub mod parser;
 
 #[cfg(test)]
