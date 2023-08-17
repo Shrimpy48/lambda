@@ -1,6 +1,8 @@
 use std::collections::HashSet;
 use std::fmt;
 
+pub mod parser;
+
 use super::*;
 
 #[derive(Debug, Clone, Eq)]
@@ -11,6 +13,16 @@ pub enum Term {
     Application(Box<Term>, Box<Term>),
     Product(String, Box<Term>, Box<Term>),
     Annotation(Box<Term>, Box<Term>),
+}
+
+#[derive(Debug, Clone)]
+pub enum TypeError {
+    Mismatch { expected: Term, actual: Term },
+    NotFunType { term: Term, ty: Term },
+    NotType(Term),
+    NotTypeable(Term),
+    UndefinedVar(String),
+    CouldNotInfer(Term),
 }
 
 pub type Environment = Vec<(String, Term)>;
@@ -259,72 +271,70 @@ impl Term {
 
     // TODO: make sure types are evaluated when necessary.
     /// The type of this term in the given environment, if the term is well-typed and the type is inferrable.
-    pub fn synthesise_type_in(&self, env: &Environment) -> Option<Term> {
+    pub fn synthesise_type_in(&self, env: &Environment) -> Result<Term, TypeError> {
         match self {
-            Self::Sort(Sort::Type) => Some(Term::Sort(Sort::Universal)),
+            Self::Sort(Sort::Type) => Ok(Term::Sort(Sort::Universal)),
             Self::Variable(x) => env
                 .iter()
                 .rev()
                 .find(|(v, _)| v == x)
-                .map(|(_, t)| t.clone()),
-            Self::Application(t, u) => {
-                if let Some(Term::Product(v, a1, b)) = t.synthesise_type_in(env) {
-                    if u.check_type_in(env, &a1) {
-                        Some(b.substitute(&v, u).evaluate())
-                    } else {
-                        None
-                    }
-                } else {
-                    None
+                .map(|(_, t)| t.clone())
+                .ok_or(TypeError::UndefinedVar(x.clone())),
+            Self::Application(t, u) => match t.synthesise_type_in(env)? {
+                Term::Product(v, a1, b) => {
+                    u.check_type_in(env, &a1)?;
+                    Ok(b.substitute(&v, u).evaluate())
                 }
-            }
+                ty => Err(TypeError::NotFunType {
+                    term: t.as_ref().clone(),
+                    ty,
+                }),
+            },
             Self::Product(x, ty, t) => {
                 if !matches!(ty.synthesise_type_in(env)?, Term::Sort(_)) {
-                    return None;
+                    return Err(TypeError::NotType(ty.as_ref().clone()));
                 }
                 let mut inner_env = env.clone();
                 inner_env.push((x.to_owned(), ty.as_ref().clone()));
                 let b = t.synthesise_type_in(&inner_env)?;
                 if !matches!(b, Term::Sort(_)) {
-                    return None;
+                    return Err(TypeError::NotType(b));
                 }
-                Some(b)
+                Ok(b)
             }
             Self::Abstraction(x, ty, t) => {
                 if let Some(ty) = ty {
                     if !matches!(ty.synthesise_type_in(env)?, Term::Sort(_)) {
-                        return None;
+                        return Err(TypeError::NotType(ty.as_ref().clone()));
                     }
                     let mut inner_env = env.clone();
                     inner_env.push((x.to_owned(), ty.as_ref().clone()));
                     let b = t.synthesise_type_in(&inner_env)?;
                     if !matches!(b.synthesise_type_in(&inner_env)?, Term::Sort(_)) {
-                        return None;
+                        return Err(TypeError::NotType(b));
                     }
-                    Some(Term::Product(
+                    Ok(Term::Product(
                         x.to_owned(),
                         Box::new(ty.as_ref().clone()),
                         Box::new(b),
                     ))
                 } else {
-                    None
+                    Err(TypeError::CouldNotInfer(self.clone()))
                 }
             }
             Self::Annotation(e, ty) => {
                 if !matches!(ty.synthesise_type_in(env)?, Term::Sort(_)) {
-                    return None;
+                    return Err(TypeError::NotType(ty.as_ref().clone()));
                 }
-                if !e.check_type_in(env, ty) {
-                    return None;
-                }
-                return Some(ty.as_ref().clone());
+                e.check_type_in(env, ty)?;
+                return Ok(ty.as_ref().clone());
             }
-            Self::Sort(Sort::Universal) => None,
+            Self::Sort(Sort::Universal) => Err(TypeError::NotTypeable(self.clone())),
         }
     }
 
-    /// Whether this term inhabits the given type.
-    pub fn check_type_in(&self, env: &Environment, ty: &Term) -> bool {
+    /// Assert that this term inhabits the given type.
+    pub fn check_type_in(&self, env: &Environment, ty: &Term) -> Result<(), TypeError> {
         match self {
             Self::Abstraction(x, None, t) => {
                 if let Term::Product(_, a, b) = ty {
@@ -332,24 +342,32 @@ impl Term {
                     inner_env.push((x.to_owned(), a.as_ref().clone()));
                     return t.check_type_in(&inner_env, b);
                 } else {
-                    return false;
+                    return Err(TypeError::NotFunType {
+                        term: self.clone(),
+                        ty: ty.clone(),
+                    });
                 }
             }
             _ => {}
         }
-        match self.synthesise_type_in(env) {
-            Some(ty2) => ty == &ty2,
-            None => false,
+        let actual = self.synthesise_type_in(env)?;
+        if ty == &actual {
+            Ok(())
+        } else {
+            Err(TypeError::Mismatch {
+                expected: ty.clone(),
+                actual,
+            })
         }
     }
 
     /// The type of this term in the empty environment, if it is well-typed.
-    pub fn synthesise_type_closed(&self) -> Option<Term> {
+    pub fn synthesise_type_closed(&self) -> Result<Term, TypeError> {
         self.synthesise_type_in(&Environment::new())
     }
 
-    /// Check the type of this term in the empty environment.
-    pub fn check_type_closed(&self, ty: &Term) -> bool {
+    /// Assert that this term inhabits the given type in the empty environment.
+    pub fn check_type_closed(&self, ty: &Term) -> Result<(), TypeError> {
         self.check_type_in(&Environment::new(), ty)
     }
 }

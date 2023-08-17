@@ -9,6 +9,7 @@ module.exports = grammar({
         $.sort,
         $.abstraction,
         $.application,
+        $.annotation,
         $.product,
         seq('(', $._term, ')'),
         seq('[', $._term, ']'),
@@ -19,9 +20,15 @@ module.exports = grammar({
     // Exclude lambda and uppercase pi
     variable: $ => /[a-zA-Zα-κμ-ωΑ-ΚΜ-ΟΡ-Ω_][a-zA-Zα-κμ-ωΑ-ΚΜ-ΟΡ-Ω0-9_]*'*/,
 
-    application: $ => prec.left(1, seq(
+    application: $ => prec.left(3, seq(
         field('lhs', $._term),
         field('rhs', $._term)
+    )),
+
+    annotation: $ => prec.right(1, seq(
+        field('expr', $._term),
+        choice(":", "::"),
+        field('type', $._term)
     )),
 
     abstraction: $ => seq(
@@ -40,7 +47,7 @@ module.exports = grammar({
             ".",
             field('output', $._term)
         ),
-        prec.right(1, seq(
+        prec.right(3, seq(
             field('input', $._term), 
             choice("->", "→", "⟶"), 
             field('output', $._term)

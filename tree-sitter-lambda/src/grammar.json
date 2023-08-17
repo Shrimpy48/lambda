@@ -26,6 +26,10 @@
         },
         {
           "type": "SYMBOL",
+          "name": "annotation"
+        },
+        {
+          "type": "SYMBOL",
           "name": "product"
         },
         {
@@ -83,7 +87,7 @@
     },
     "application": {
       "type": "PREC_LEFT",
-      "value": 1,
+      "value": 3,
       "content": {
         "type": "SEQ",
         "members": [
@@ -98,6 +102,44 @@
           {
             "type": "FIELD",
             "name": "rhs",
+            "content": {
+              "type": "SYMBOL",
+              "name": "_term"
+            }
+          }
+        ]
+      }
+    },
+    "annotation": {
+      "type": "PREC_RIGHT",
+      "value": 1,
+      "content": {
+        "type": "SEQ",
+        "members": [
+          {
+            "type": "FIELD",
+            "name": "expr",
+            "content": {
+              "type": "SYMBOL",
+              "name": "_term"
+            }
+          },
+          {
+            "type": "CHOICE",
+            "members": [
+              {
+                "type": "STRING",
+                "value": ":"
+              },
+              {
+                "type": "STRING",
+                "value": "::"
+              }
+            ]
+          },
+          {
+            "type": "FIELD",
+            "name": "type",
             "content": {
               "type": "SYMBOL",
               "name": "_term"
@@ -263,7 +305,7 @@
         },
         {
           "type": "PREC_RIGHT",
-          "value": 1,
+          "value": 3,
           "content": {
             "type": "SEQ",
             "members": [

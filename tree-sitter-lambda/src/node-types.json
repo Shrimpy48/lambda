@@ -28,6 +28,10 @@
             "named": true
           },
           {
+            "type": "annotation",
+            "named": true
+          },
+          {
             "type": "application",
             "named": true
           },
@@ -70,6 +74,10 @@
             "named": true
           },
           {
+            "type": "annotation",
+            "named": true
+          },
+          {
             "type": "application",
             "named": true
           },
@@ -91,6 +99,104 @@
         "multiple": false,
         "required": true,
         "types": [
+          {
+            "type": "variable",
+            "named": true
+          }
+        ]
+      }
+    }
+  },
+  {
+    "type": "annotation",
+    "named": true,
+    "fields": {
+      "expr": {
+        "multiple": true,
+        "required": true,
+        "types": [
+          {
+            "type": "(",
+            "named": false
+          },
+          {
+            "type": ")",
+            "named": false
+          },
+          {
+            "type": "[",
+            "named": false
+          },
+          {
+            "type": "]",
+            "named": false
+          },
+          {
+            "type": "abstraction",
+            "named": true
+          },
+          {
+            "type": "annotation",
+            "named": true
+          },
+          {
+            "type": "application",
+            "named": true
+          },
+          {
+            "type": "product",
+            "named": true
+          },
+          {
+            "type": "sort",
+            "named": true
+          },
+          {
+            "type": "variable",
+            "named": true
+          }
+        ]
+      },
+      "type": {
+        "multiple": true,
+        "required": true,
+        "types": [
+          {
+            "type": "(",
+            "named": false
+          },
+          {
+            "type": ")",
+            "named": false
+          },
+          {
+            "type": "[",
+            "named": false
+          },
+          {
+            "type": "]",
+            "named": false
+          },
+          {
+            "type": "abstraction",
+            "named": true
+          },
+          {
+            "type": "annotation",
+            "named": true
+          },
+          {
+            "type": "application",
+            "named": true
+          },
+          {
+            "type": "product",
+            "named": true
+          },
+          {
+            "type": "sort",
+            "named": true
+          },
           {
             "type": "variable",
             "named": true
@@ -125,6 +231,10 @@
           },
           {
             "type": "abstraction",
+            "named": true
+          },
+          {
+            "type": "annotation",
             "named": true
           },
           {
@@ -167,6 +277,10 @@
           },
           {
             "type": "abstraction",
+            "named": true
+          },
+          {
+            "type": "annotation",
             "named": true
           },
           {
@@ -228,6 +342,10 @@
             "named": true
           },
           {
+            "type": "annotation",
+            "named": true
+          },
+          {
             "type": "application",
             "named": true
           },
@@ -280,6 +398,10 @@
             "named": true
           },
           {
+            "type": "annotation",
+            "named": true
+          },
+          {
             "type": "application",
             "named": true
           },
@@ -314,6 +436,10 @@
       "types": [
         {
           "type": "abstraction",
+          "named": true
+        },
+        {
+          "type": "annotation",
           "named": true
         },
         {
