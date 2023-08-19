@@ -12,6 +12,10 @@ use proptest_derive::Arbitrary;
 
 use super::*;
 
+/// The possible kinds.
+/// 
+/// `Sort::Type` and `Sort::Universal` are sometimes referred to as 
+/// Prop and Type respectively.
 #[cfg_attr(test, derive(Arbitrary))]
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Sort {
@@ -211,16 +215,74 @@ impl Term {
         }
     }
 
-    /// Fully beta-reduce the term. If the term is well-typed, this will halt.
+    /// Eta-convert the left-outermost thing if one exists.
+    /// This does not check the type.
+    pub fn eta_convert_lazy(&self) -> Option<Self> {
+        match self {
+            Self::Abstraction(v, ty, t) => {
+                if let Self::Application(f, a) = t.as_ref() {
+                    if let Self::Variable(x) = a.as_ref() {
+                        if x == v {
+                            return Some(f.as_ref().clone());
+                        }
+                    }
+                } 
+                if let Some(t2) = t.eta_convert_lazy() {
+                    Some(Self::Abstraction(
+                        v.to_owned(),
+                        Box::new(ty.as_ref().clone()),
+                        Box::new(t2),
+                    ))
+                } else {
+                    ty.eta_convert_lazy().map(|ty2| {
+                        Self::Abstraction(v.to_owned(), Box::new(ty2), Box::new(t.as_ref().clone()))
+                    })
+                }
+            }
+            Self::Application(t, u) => {
+                if let Some(t2) = t.eta_convert_lazy() {
+                    Some(Self::Application(
+                        Box::new(t2),
+                        Box::new(u.as_ref().clone()),
+                    ))
+                } else {
+                    u.eta_convert_lazy()
+                        .map(|u2| Self::Application(Box::new(t.as_ref().clone()), Box::new(u2)))
+                }
+            }
+            Self::Product(v, ty, t) => {
+                if let Some(t2) = t.eta_convert_lazy() {
+                    Some(Self::Product(
+                        v.to_owned(),
+                        Box::new(ty.as_ref().clone()),
+                        Box::new(t2),
+                    ))
+                } else {
+                    ty.eta_convert_lazy().map(|ty2| {
+                        Self::Product(v.to_owned(), Box::new(ty2), Box::new(t.as_ref().clone()))
+                    })
+                }
+            }
+            Self::Variable(_) | Self::Sort(_) => None,
+        }
+    }
+
+    /// Fully reduce the term to its long beta-eta-normal form. If the term is well-typed, this will halt.
+    /// It is assumed that such forms are canonical.
     pub fn evaluate(&self) -> Self {
         let mut res = self.clone();
         while let Some(new_res) = res.beta_reduce_lazy() {
+            res = new_res;
+        }
+        while let Some(new_res) = res.eta_convert_lazy() {
             res = new_res;
         }
         res
     }
 
     /// The type of this term in the given environment, if it is well-typed.
+    /// This assumes that the environment is valid and all types in it are in a canonical form.
+    /// If this holds, the result will be in canonical form.
     pub fn type_in(&self, env: &Environment) -> Option<Term> {
         match self {
             Self::Sort(Sort::Type) => Some(Term::Sort(Sort::Universal)),
@@ -232,6 +294,8 @@ impl Term {
             Self::Application(t, u) => {
                 if let Some(Term::Product(v, a1, b)) = t.type_in(env) {
                     let a2 = u.type_in(env)?;
+                    // If type_in returns canonical terms, then 
+                    // alpha-equivalence is sufficient.
                     if a1.as_ref() == &a2 {
                         Some(b.substitute(&v, u).evaluate())
                     } else {
@@ -242,6 +306,7 @@ impl Term {
                 }
             }
             Self::Product(x, ty, t) => {
+                // The only canonical form for a sort is a Term::Sort.
                 if !matches!(ty.type_in(env)?, Term::Sort(_)) {
                     return None;
                 }
@@ -254,6 +319,7 @@ impl Term {
                 Some(b)
             }
             Self::Abstraction(x, ty, t) => {
+                // The only canonical form for a sort is a Term::Sort.
                 if !matches!(ty.type_in(env)?, Term::Sort(_)) {
                     return None;
                 }
@@ -265,7 +331,7 @@ impl Term {
                 }
                 Some(Term::Product(
                     x.to_owned(),
-                    Box::new(ty.as_ref().clone()),
+                    Box::new(ty.evaluate()),
                     Box::new(b),
                 ))
             }
