@@ -2,6 +2,7 @@ use super::*;
 
 /// A simple imperative language.
 pub mod target {
+    use std::fmt;
     #[derive(Debug, Clone, Default)]
     pub struct Ast {
         pub type_defs: Vec<(String, TypeDef)>,
@@ -58,6 +59,98 @@ pub mod target {
             Self::default()
         }
     }
+
+    impl fmt::Display for Ast {
+        fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+            for (name, def) in &self.type_defs {
+                match def {
+                    TypeDef::Struct { fields } => {
+                        writeln!(f, "struct {name} {{")?;
+                        for (field_name, field_type) in fields {
+                            writeln!(f, "    {field_name}: {field_type},")?;
+                        }
+                        write!(f, "}}\n\n")?;
+                    }
+                }
+            }
+            for (name, def) in &self.func_defs {
+                write!(f, "fn {name}(")?;
+                write!(f, "{}: {}", def.args[0].0, def.args[0].1)?;
+                for (arg_name, arg_type) in &def.args[1..] {
+                    write!(f, ", {arg_name}: {arg_type}")?;
+                }
+                writeln!(f, ") {{")?;
+                for stmt in &def.body {
+                    for line in stmt.to_string().lines() {
+                        writeln!(f, "    {line}")?;
+                    }
+                }
+                for line in def.ret.to_string().lines() {
+                    writeln!(f, "    {line}")?;
+                }
+                write!(f, "}}\n\n")?;
+            }
+            Ok(())
+        }
+    }
+
+    impl fmt::Display for Type {
+        fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+            match self {
+                Self::Named { ident } => ident.fmt(f),
+                Self::Int => write!(f, "int"),
+                Self::FnPtr => write!(f, "fn_ptr"),
+                Self::Any => write!(f, "any"),
+            }
+        }
+    }
+
+    impl fmt::Display for Stmt {
+        fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+            match self {
+                Self::Assign { lhs, rhs } => write!(f, "let {lhs} = {rhs};"),
+            }
+        }
+    }
+
+    impl fmt::Display for Expr {
+        fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+            match self {
+                Self::Read { path } => path.fmt(f),
+                Self::Call { func, args } => {
+                    write!(f, "{func}(")?;
+                    write!(f, "{}", args[0])?;
+                    for arg in &args[1..] {
+                        write!(f, ", {arg}")?;
+                    }
+                    write!(f, ")")
+                }
+                Self::StructLit { name, fields } => {
+                    writeln!(f, "{name} {{")?;
+                    for (field_name, field_expr) in fields {
+                        let expr_string = field_expr.to_string();
+                        let mut lines = expr_string.lines();
+                        write!(f, "    {field_name}: {}", lines.next().unwrap())?;
+                        for line in lines {
+                            write!(f, "\n    {}", line)?;
+                        }
+                        writeln!(f, ",")?;
+                    }
+                    write!(f, "}}")
+                }
+            }
+        }
+    }
+
+    impl fmt::Display for Path {
+        fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+            write!(f, "{}", self.parts[0])?;
+            for part in &self.parts[1..] {
+                write!(f, ".{part}")?;
+            }
+            Ok(())
+        }
+    }
 }
 
 pub fn compile_toplevel(term: &Term) -> target::Ast {
@@ -93,9 +186,10 @@ fn compile_impl(
         },
         Term::Abstraction(v, b) => {
             let captured_vars = term.free_vars();
+            let closure_num = ast.type_defs.len();
 
             // Build a struct type representing the closure state
-            let ty_name = format!("Closure{}", ast.type_defs.len());
+            let ty_name = format!("Closure{}", closure_num);
             let mut fields = vec![("code".to_string(), target::Type::FnPtr)];
             fields.extend(
                 captured_vars
@@ -143,7 +237,7 @@ fn compile_impl(
                 body,
                 ret,
             };
-            let fn_name = format!("closure_{}", ast.func_defs.len());
+            let fn_name = format!("closure_{}", closure_num);
             ast.func_defs.push((fn_name.to_string(), fn_def));
 
             // Build an instance of the struct representing the closure
