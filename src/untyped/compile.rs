@@ -25,6 +25,7 @@ pub mod target {
     #[derive(Debug, Clone)]
     pub struct Func {
         pub args: Vec<(String, Type)>,
+        pub ret_type: Type,
         pub body: Vec<Stmt>,
         pub ret: Expr,
     }
@@ -79,7 +80,7 @@ pub mod target {
                 for (arg_name, arg_type) in &def.args[1..] {
                     write!(f, ", {arg_name}: {arg_type}")?;
                 }
-                writeln!(f, ") {{")?;
+                writeln!(f, ") -> {} {{", def.ret_type)?;
                 for stmt in &def.body {
                     for line in stmt.to_string().lines() {
                         writeln!(f, "    {line}")?;
@@ -167,6 +168,7 @@ pub fn compile_toplevel(term: &Term) -> target::Ast {
     let ret = compile_impl(b, &mut out, &ctx, &mut body);
     let main_def = target::Func {
         args: vec![(v.to_string(), target::Type::Any)],
+        ret_type: target::Type::Any,
         body,
         ret,
     };
@@ -234,6 +236,7 @@ fn compile_impl(
                     ),
                     (v.to_string(), target::Type::Any),
                 ],
+                ret_type: target::Type::Any,
                 body,
                 ret,
             };
