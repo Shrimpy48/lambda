@@ -13,8 +13,8 @@ use proptest_derive::Arbitrary;
 use super::*;
 
 /// The possible kinds.
-/// 
-/// `Sort::Type` and `Sort::Universal` are sometimes referred to as 
+///
+/// `Sort::Type` and `Sort::Universal` are sometimes referred to as
 /// Prop and Type respectively.
 #[cfg_attr(test, derive(Arbitrary))]
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -33,6 +33,7 @@ pub enum Term {
 }
 
 pub type Environment = Vec<(String, Term)>;
+pub type EnvRef<'a> = &'a [(String, Term)];
 
 impl Term {
     pub fn vars(&self) -> HashSet<String> {
@@ -222,11 +223,11 @@ impl Term {
             Self::Abstraction(v, ty, t) => {
                 if let Self::Application(f, a) = t.as_ref() {
                     if let Self::Variable(x) = a.as_ref() {
-                        if x == v {
+                        if x == v && !f.free_vars().contains(v) {
                             return Some(f.as_ref().clone());
                         }
                     }
-                } 
+                }
                 if let Some(t2) = t.eta_convert_lazy() {
                     Some(Self::Abstraction(
                         v.to_owned(),
@@ -283,7 +284,7 @@ impl Term {
     /// The type of this term in the given environment, if it is well-typed.
     /// This assumes that the environment is valid and all types in it are in a canonical form.
     /// If this holds, the result will be in canonical form.
-    pub fn type_in(&self, env: &Environment) -> Option<Term> {
+    pub fn type_in(&self, env: EnvRef<'_>) -> Option<Term> {
         match self {
             Self::Sort(Sort::Type) => Some(Term::Sort(Sort::Universal)),
             Self::Variable(x) => env
@@ -294,7 +295,7 @@ impl Term {
             Self::Application(t, u) => {
                 if let Some(Term::Product(v, a1, b)) = t.type_in(env) {
                     let a2 = u.type_in(env)?;
-                    // If type_in returns canonical terms, then 
+                    // If type_in returns canonical terms, then
                     // alpha-equivalence is sufficient.
                     if a1.as_ref() == &a2 {
                         Some(b.substitute(&v, u).evaluate())
@@ -310,7 +311,7 @@ impl Term {
                 if !matches!(ty.type_in(env)?, Term::Sort(_)) {
                     return None;
                 }
-                let mut inner_env = env.clone();
+                let mut inner_env = env.to_owned();
                 inner_env.push((x.to_owned(), ty.as_ref().clone()));
                 let b = t.type_in(&inner_env)?;
                 if !matches!(b, Term::Sort(_)) {
@@ -323,7 +324,7 @@ impl Term {
                 if !matches!(ty.type_in(env)?, Term::Sort(_)) {
                     return None;
                 }
-                let mut inner_env = env.clone();
+                let mut inner_env = env.to_owned();
                 inner_env.push((x.to_owned(), ty.as_ref().clone()));
                 let b = t.type_in(&inner_env)?;
                 if !matches!(b.type_in(&inner_env)?, Term::Sort(_)) {
