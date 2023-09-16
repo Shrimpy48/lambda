@@ -4,6 +4,7 @@ use std::fmt;
 use super::*;
 
 pub mod derivation;
+pub mod rec_scheme;
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum Type {
