@@ -132,8 +132,8 @@ impl FlatTerm {
         self.root()
     }
 
-    fn push_general<A, F: FnMut(A) -> Term<A>>(&mut self, seed: A, mut f: F) -> FlatTermRef {
-        let node = f(seed).map(|child| self.push_general(child, &mut f));
+    fn push_general<A, F: FnMut(A) -> Term<A>>(&mut self, seed: A, f: &mut F) -> FlatTermRef {
+        let node = f(seed).map(|child| self.push_general(child, f));
         self.nodes.push(node);
         self.root()
     }
@@ -147,9 +147,9 @@ impl FlatTerm {
         values.pop().unwrap()
     }
 
-    fn expand<A, F: FnMut(A) -> Term<A>>(seed: A, f: F) -> Self {
+    fn expand<A, F: FnMut(A) -> Term<A>>(seed: A, mut f: F) -> Self {
         let mut tree = FlatTerm { nodes: Vec::new() };
-        tree.push_general(seed, f);
+        tree.push_general(seed, &mut f);
         tree
     }
 }
@@ -241,8 +241,8 @@ impl FlatType {
         self.root()
     }
 
-    fn push_general<A, F: FnMut(A) -> Type<A>>(&mut self, seed: A, mut f: F) -> FlatTypeRef {
-        let node = f(seed).map(|child| self.push_general(child, &mut f));
+    fn push_general<A, F: FnMut(A) -> Type<A>>(&mut self, seed: A, f: &mut F) -> FlatTypeRef {
+        let node = f(seed).map(|child| self.push_general(child, f));
         self.nodes.push(node);
         self.root()
     }
@@ -256,9 +256,9 @@ impl FlatType {
         values.pop().unwrap()
     }
 
-    fn expand<A, F: FnMut(A) -> Type<A>>(seed: A, f: F) -> Self {
+    fn expand<A, F: FnMut(A) -> Type<A>>(seed: A, mut f: F) -> Self {
         let mut tree = FlatType { nodes: Vec::new() };
-        tree.push_general(seed, f);
+        tree.push_general(seed, &mut f);
         tree
     }
 }

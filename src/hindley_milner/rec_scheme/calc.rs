@@ -24,15 +24,15 @@ impl FlatTypeEnvironment {
         Self::default()
     }
 
-    fn reduce<A, F: FnMut(&Type<A>) -> A>(&self, t: FlatTypeRef, mut f: F) -> A {
+    fn reduce<A, F: FnMut(&Type<A>) -> A>(&self, t: FlatTypeRef, f: &mut F) -> A {
         // This can be made more efficient, but it's a bit of a pain because
         // we don't necessarily have topological ordering.
-        let mapped = self[t].map_ref(|r| self.reduce(*r, &mut f));
+        let mapped = self[t].map_ref(|r| self.reduce(*r, f));
         f(&mapped)
     }
 
     fn vars(&self, t: FlatTypeRef) -> HashSet<String> {
-        self.reduce(t, |l| match l {
+        self.reduce(t, &mut |l| match l {
             Type::Var(v) => [v.to_owned()].into(),
             Type::GenVar(_) => HashSet::new(),
             Type::Fn { lhs, rhs } => lhs | rhs,
@@ -40,7 +40,7 @@ impl FlatTypeEnvironment {
     }
 
     fn gen_vars(&self, t: FlatTypeRef) -> HashSet<String> {
-        self.reduce(t, |l| match l {
+        self.reduce(t, &mut |l| match l {
             Type::GenVar(v) => [v.to_owned()].into(),
             Type::Var(_) => HashSet::new(),
             Type::Fn { lhs, rhs } => lhs | rhs,
