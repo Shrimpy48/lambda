@@ -90,6 +90,12 @@ pub struct FlatTermRef {
     idx: usize,
 }
 
+impl FlatTermRef {
+    pub fn ref_eq(self, other: FlatTypeRef) -> bool {
+        self.idx == other.idx
+    }
+}
+
 #[derive(Debug, Clone)]
 pub struct FlatTerm {
     nodes: Vec<Term<FlatTermRef>>,
@@ -103,7 +109,7 @@ impl FlatTerm {
     }
 
     fn push(&mut self, t: BoxedTerm) -> FlatTermRef {
-        let node = t.root.map(|child| self.push(*child));
+        let node = t.root.map(|child| self.push(child));
         self.nodes.push(node);
         self.root()
     }
@@ -158,7 +164,7 @@ impl Index<FlatTermRef> for FlatTerm {
 
 #[derive(Debug, Clone)]
 pub struct BoxedTerm {
-    root: Term<Box<BoxedTerm>>,
+    root: Box<Term<BoxedTerm>>,
 }
 
 #[derive(Debug, Clone)]
@@ -168,7 +174,7 @@ pub struct RcTerm {
 
 impl From<BoxedTerm> for FlatTerm {
     fn from(value: BoxedTerm) -> Self {
-        Self::expand(value, |node| node.root.map(|x| *x))
+        Self::expand(value, |node| *node.root)
     }
 }
 
@@ -194,7 +200,7 @@ pub struct FlatTypeRef {
     idx: usize,
 }
 impl FlatTypeRef {
-    fn ref_eq(self, other: FlatTypeRef) -> bool {
+    pub fn ref_eq(self, other: FlatTypeRef) -> bool {
         self.idx == other.idx
     }
 }
@@ -212,7 +218,7 @@ impl FlatType {
     }
 
     fn push(&mut self, t: BoxedType) -> FlatTypeRef {
-        let node = t.root.map(|child| self.push(*child));
+        let node = t.root.map(|child| self.push(child));
         self.nodes.push(node);
         self.root()
     }
@@ -267,7 +273,7 @@ impl Index<FlatTypeRef> for FlatType {
 
 #[derive(Debug, Clone)]
 pub struct BoxedType {
-    root: Type<Box<BoxedType>>,
+    root: Box<Type<BoxedType>>,
 }
 
 #[derive(Debug, Clone)]
@@ -277,7 +283,7 @@ pub struct RcType {
 
 impl From<BoxedType> for FlatType {
     fn from(value: BoxedType) -> Self {
-        Self::expand(value, |node| node.root.map(|x| *x))
+        Self::expand(value, |node| *node.root)
     }
 }
 

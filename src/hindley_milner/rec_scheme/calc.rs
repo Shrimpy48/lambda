@@ -173,35 +173,35 @@ impl FlatTypeEnvironment {
     }
 }
 
-impl FlatTerm {
+pub trait HMTermArena {
+    type Ref;
+
+    fn get<'a>(&'a self, node: &'a Self::Ref) -> &'a Term<Self::Ref>;
+
     /// Infer the most general type of this term in the given type environment, if it is well-typed.
-    pub fn type_in(
-        &self,
-        node: FlatTermRef,
-        type_env: &mut FlatTypeEnvironment,
-    ) -> Option<FlatTypeRef> {
-        match &self[node] {
+    fn type_in(&self, node: &Self::Ref, type_env: &mut FlatTypeEnvironment) -> Option<FlatTypeRef> {
+        match self.get(node) {
             Term::Var(x) => type_env.instantiate(x),
             Term::Abs { var, body } => {
                 let t = type_env.new_var();
                 type_env.push_binding(var.to_owned(), t);
-                let b = self.type_in(*body, type_env);
+                let b = self.type_in(body, type_env);
                 type_env.pop_binding().unwrap();
                 Some(type_env.insert_type(Type::Fn { lhs: t, rhs: b? }))
             }
             Term::App { lhs, rhs } => {
-                let f = self.type_in(*lhs, type_env)?;
-                let a = self.type_in(*rhs, type_env)?;
+                let f = self.type_in(lhs, type_env)?;
+                let a = self.type_in(rhs, type_env)?;
                 let b = type_env.new_var();
                 let f_ = type_env.insert_type(Type::Fn { lhs: a, rhs: b });
                 type_env.unify(f, f_)?;
                 Some(b)
             }
             Term::Let { var, expr, body } => {
-                let ex_ty = self.type_in(*expr, type_env)?;
+                let ex_ty = self.type_in(expr, type_env)?;
                 type_env.generalise(ex_ty);
                 type_env.push_binding(var.to_owned(), ex_ty);
-                let body_ty = self.type_in(*body, type_env);
+                let body_ty = self.type_in(body, type_env);
                 type_env.pop_binding().unwrap();
                 body_ty
             }
@@ -209,9 +209,39 @@ impl FlatTerm {
     }
 
     /// The type of this term in the empty type environment, if it is well-typed.
-    pub fn type_closed(&self) -> Option<FlatType> {
+    fn type_closed(&self, node: &Self::Ref) -> Option<FlatType> {
         let mut env = FlatTypeEnvironment::new();
-        let ty_ref = self.type_in(self.root(), &mut env)?;
+        let ty_ref = self.type_in(node, &mut env)?;
         Some(env.get_flat_ty(ty_ref))
+    }
+}
+
+impl HMTermArena for FlatTerm {
+    type Ref = FlatTermRef;
+
+    fn get<'a>(&'a self, node: &'a Self::Ref) -> &'a Term<Self::Ref> {
+        &self[*node]
+    }
+}
+
+#[derive(Debug, Clone, Copy)]
+pub struct RcTermArena;
+
+impl HMTermArena for RcTermArena {
+    type Ref = RcTerm;
+
+    fn get<'a>(&'a self, node: &'a Self::Ref) -> &'a Term<Self::Ref> {
+        &node.root
+    }
+}
+
+#[derive(Debug, Clone, Copy)]
+pub struct BoxedTermArena;
+
+impl HMTermArena for BoxedTermArena {
+    type Ref = BoxedTerm;
+
+    fn get<'a>(&'a self, node: &'a Self::Ref) -> &'a Term<Self::Ref> {
+        &node.root
     }
 }
